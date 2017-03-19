@@ -1,0 +1,26 @@
+{
+  "name": "gcs-frontend-browser-visualization",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byWulf/gcs-frontend-browser-visualization.git"
+  },
+  "author": "byWulf",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/byWulf/gcs-frontend-browser-visualization/issues"
+  },
+  "homepage": "https://github.com/byWulf/gcs-frontend-browser-visualization#readme",
+  "dependencies": {
+    "cannon": "^0.6.2",
+    "three": "^0.84.0",
+    "threejs-dice": "^1.0.1",
+    "tween.js": "^16.6.0"
+  }
+}
