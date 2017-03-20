@@ -207,6 +207,29 @@ class Visualization {
         this.renderer.setClearColor('#cef3e8', 1);
 
         this.sceneContainer.appendChild(this.renderer.domElement);
+
+        this.composer = new THREE.EffectComposer(this.renderer);
+
+        this.renderPass = new THREE.RenderPass(this.scene, this.camera);
+        this.composer.addPass(this.renderPass);
+
+        this.outlinePass = new THREE.OutlinePass(new THREE.Vector2(this.sceneContainer.offsetWidth, this.sceneContainer.offsetHeight), this.scene, this.camera);
+        this.composer.addPass(this.outlinePass);
+        this.outlinePass.edgeStrength = 5;
+        this.outlinePass.edgeThickness = 1;
+        this.outlinePass.edgeGlow = 0;
+        this.outlinePass.pulsePeriod = 2;
+        this.outlinePass.visibleEdgeColor.r = 255;
+        this.outlinePass.visibleEdgeColor.g = 255;
+        this.outlinePass.visibleEdgeColor.b = 255;
+        this.outlinePass.hiddenEdgeColor.r = 1;
+        this.outlinePass.hiddenEdgeColor.g = 1;
+        this.outlinePass.hiddenEdgeColor.b = 1;
+
+        this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+        this.effectFXAA.uniforms['resolution'].value.set(1 / this.sceneContainer.offsetWidth, 1 / this.sceneContainer.offsetHeight);
+        this.effectFXAA.renderToScreen = true;
+        this.composer.addPass(this.effectFXAA);
     }
 
     createLighting() {
@@ -264,6 +287,9 @@ class Visualization {
             this.camera.updateProjectionMatrix();
 
             this.renderer.setSize(this.sceneContainer.offsetWidth, this.sceneContainer.offsetHeight);
+
+            this.composer.setSize(this.sceneContainer.offsetWidth, this.sceneContainer.offsetHeight);
+            this.effectFXAA.uniforms['resolution'].value.set(1 / this.sceneContainer.offsetWidth, 1 / this.sceneContainer.offsetHeight);
         };
 
         setTimeout(() => {
@@ -275,7 +301,8 @@ class Visualization {
 
     createAnimationFrameListener() {
         let render = (time) => {
-            this.renderer.render(this.scene, this.camera);
+            //this.renderer.render(this.scene, this.camera); //TODO: Noch benötigt?
+            this.composer.render();
             TWEEN.update(time);
 
             this.world.step(1.0 / 60.0);

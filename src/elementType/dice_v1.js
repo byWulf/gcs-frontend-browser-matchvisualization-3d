@@ -28,7 +28,18 @@ class dice_v1 extends ElementTypeInterface {
             value: data.value
         }]);
 
-        this.canBeRolled = data.canBeRolled;
+        this.setCanBeRolled(data.canBeRolled);
+    }
+
+    setCanBeRolled(canBeRolled) {
+        this.canBeRolled = canBeRolled;
+
+        let selectedObjectsIndex = this.visualization.outlinePass.selectedObjects.findIndex(object => object === this.object);
+        if (canBeRolled && selectedObjectsIndex === -1) {
+            this.visualization.outlinePass.selectedObjects.push(this.object);
+        } else if (!canBeRolled && selectedObjectsIndex > -1) {
+            this.visualization.outlinePass.selectedObjects.splice(selectedObjectsIndex, 1);
+        }
     }
 
     onRendered() {
@@ -49,7 +60,7 @@ class dice_v1 extends ElementTypeInterface {
             }]);
         }
         if (event === 'dice.permissionChanged') {
-            this.canBeRolled = data.canBeRolled;
+            this.setCanBeRolled(data.canBeRolled);
         }
     }
 
