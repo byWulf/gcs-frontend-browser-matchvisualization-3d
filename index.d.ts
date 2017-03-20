@@ -6,6 +6,6 @@ declare namespace GcsFrontendBrowserVisualization {
     }
 }
 
-declare module "gcs-frontend-browser-visualization" {
+declare module "gcs-frontend-browser-matchvisualization-3d" {
     export = GcsFrontendBrowserVisualization;
 }
