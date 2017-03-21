@@ -12,17 +12,17 @@ class ElementTypeInterface {
         return null;
     }
 
+    getHighlightObject(data) {
+        return null;
+    }
+
     onChildRemoved(fromParent) {}
 
     onRendered() {}
 
     onEvent(event, data) {}
 
-    onMouseEnter(point) {}
-
-    onMouseMove(point) {}
-
-    onMouseLeave() {}
+    onMouseMove(movementX, movementY) {}
 
     onMouseDown() {}
 

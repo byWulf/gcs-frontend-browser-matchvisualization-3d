@@ -11,6 +11,8 @@ class Position {
 
         this.container = null;
         this.places = [];
+
+        this.highlight = null;
     }
 }
 
@@ -23,6 +25,8 @@ class pieceContainer_v1 extends ElementTypeInterface {
         this.object = new THREE.Group();
         this.object.name = 'pieceContainer_v1';
 
+        this.stackElementRadius = data.stackElementRadius;
+
         this.positions = [];
 
         for (let i = 0; i < data.positions.length; i++) {
@@ -34,10 +38,14 @@ class pieceContainer_v1 extends ElementTypeInterface {
             position.container.position.z = position.y;
             this.object.add(position.container);
 
+            let highlightGeometry = new THREE.CircleGeometry(this.stackElementRadius, 32);
+            let highlightMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
+            position.highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+            position.highlight.rotation.x = 90 * Math.PI / 180;
+            position.container.add(position.highlight);
+
             this.positions.push(position);
         }
-
-        this.stackElementRadius = data.stackElementRadius;
     }
     rearrangePlaces(position) {
         if (position.places.length === 0) return;
@@ -109,6 +117,15 @@ class pieceContainer_v1 extends ElementTypeInterface {
                 this.rearrangePlaces(this.positions[i]);
 
                 return placeContainer;
+            }
+        }
+        return null;
+    }
+
+    getHighlightObject(data) {
+        for (let i = 0; i < this.positions.length; i++) {
+            if (this.positions[i].index === data.index) {
+                return this.positions[i].highlight;
             }
         }
         return null;

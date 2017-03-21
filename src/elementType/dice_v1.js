@@ -66,10 +66,12 @@ class dice_v1 extends ElementTypeInterface {
 
     onMouseDown() {
         if (this.canBeRolled) {
-            this.visualization.gameCommunicationCallback('dice.roll', this.element.getId(), {intensity: 1});
-
             return false;
         }
+    }
+
+    onMouseUp() {
+        this.visualization.gameCommunicationCallback('dice.roll', this.element.getId(), {intensity: 1});
     }
 }
 

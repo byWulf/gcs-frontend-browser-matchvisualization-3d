@@ -27,7 +27,6 @@ class Visualization {
         this.createScene();
         this.createWorld();
         this.createCamera();
-        this.createInteraction();
         this.createRenderer();
         this.createLighting();
         this.createTable();
@@ -40,7 +39,6 @@ class Visualization {
         this.removeAnimationFrameListener();
         this.removeResizeListener();
         this.removeCamera();
-        this.removeInteraction();
         this.removeRenderer();
         this.removeAnimations();
     }
@@ -87,24 +85,45 @@ class Visualization {
         this.cameraPositionContainer.add(this.cameraRotationContainer);
         this.scene.add(this.cameraPositionContainer);
 
-        this.cameraMousedownListener = (event) => {
-            if (event.button === 0 && this.currentSelectedElement) {
-                let result = this.currentSelectedElement.element.onMouseDown();
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.currentSelectedElement = null;
 
-                if (result === false) return;
+        this.cameraMousedownListener = (event) => {
+            //Check if a clickable element was clicked. Send the MouseDown event and lock pointer
+            if (event.button === 0) {
+                this.mouse.x = (event.offsetX / this.sceneContainer.offsetWidth) * 2 - 1;
+                this.mouse.y = - (event.offsetY / this.sceneContainer.offsetHeight) * 2 + 1;
+
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+
+                let objects = [];
+                for (let element of this.elements) {
+                    objects.push(element.element.getObject());
+                }
+
+                let intersects = this.raycaster.intersectObjects(objects, true);
+
+                if (intersects.length) {
+                    let element = this.getElementByObject(intersects[0].object);
+                    if (element) {
+                        let result = element.element.onMouseDown();
+                        if (result === false) {
+                            this.currentSelectedElement = element;
+                            this.sceneContainer.requestPointerLock();
+                            return;
+                        }
+                    }
+                }
             }
 
-
+            //No clickable element was clicked. Lock the pointer for moving/tilting camera
             if (event.button === 0 || event.button === 2) {
                 this.sceneContainer.requestPointerLock();
             }
         };
 
         this.cameraMouseupListener = (event) => {
-            if (event.button === 0 && this.currentSelectedElement) {
-                this.currentSelectedElement.element.onMouseUp();
-            }
-
             if (event.button === 0 || event.button === 2) {
                 this.sceneContainer.ownerDocument.exitPointerLock();
             }
@@ -112,11 +131,20 @@ class Visualization {
 
         this.cameraMousemoveListener = (event) => {
             if (this.cameraButtonLocked) {
+                //A clickable element is currently clicked. Send MouseMove event.
+                if (event.button === 0 && this.currentSelectedElement) {
+                    this.currentSelectedElement.element.onMouseMove(event.movementX, event.movementY);
+
+                    return;
+                }
+
+                //Left mouse button = move camera
                 if (event.button === 0) {
                     this.cameraPositionContainer.position.x = Math.max(Math.min(this.cameraPositionContainer.position.x + event.movementX * -0.1, 100), -100);
                     this.cameraPositionContainer.position.z = Math.max(Math.min(this.cameraPositionContainer.position.z + event.movementY * -0.1, 100), -100);
                 }
 
+                //Right mouse button = tilt camera
                 if (event.button === 2) {
                     this.cameraRotationContainer.rotation.x = Math.max(Math.min((this.cameraRotationContainer.rotation.x / Math.PI * 180) + event.movementY * -0.3, -5), -90) * Math.PI / 180
                 }
@@ -125,6 +153,11 @@ class Visualization {
 
         this.cameraPointerlockchangeListener = (event) => {
             this.cameraButtonLocked = document.pointerLockElement === this.sceneContainer;
+
+            if (!this.cameraButtonLocked && this.currentSelectedElement) {
+                this.currentSelectedElement.element.onMouseUp();
+                this.currentSelectedElement = null;
+            }
         };
 
         this.cameraMousewheelListener = (event) => {
@@ -139,65 +172,6 @@ class Visualization {
         this.sceneContainer.addEventListener('mouseup', this.cameraMouseupListener, false);
         this.sceneContainer.addEventListener('mousemove', this.cameraMousemoveListener, false);
         this.sceneContainer.ownerDocument.addEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
-    }
-
-    createInteraction() {
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
-
-        this.currentSelectedObject = null;
-        this.currentSelectedElement = null;
-
-        this.interactionMousemoveListener = (event) => {
-            this.mouse.x = (event.offsetX / this.sceneContainer.offsetWidth) * 2 - 1;
-            this.mouse.y = - (event.offsetY / this.sceneContainer.offsetHeight) * 2 + 1;
-
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-
-            let objects = [];
-            for (let element of this.elements) {
-                objects.push(element.element.getObject());
-            }
-
-            let intersects = this.raycaster.intersectObjects(objects, true);
-
-            if (intersects.length > 0) {
-                //MouseMove if hovered object hasn't changed
-                if (intersects[0].object === this.currentSelectedObject) {
-                    if (this.currentSelectedElement) {
-                        this.currentSelectedElement.element.onMouseMove(intersects[0].point);
-                    }
-
-                    return;
-                }
-
-                //MouseLeave because hovered object has changed (only when previous object was hovered)
-                if (this.currentSelectedObject !== null) {
-                    if (this.currentSelectedElement) {
-                        this.currentSelectedElement.element.onMouseLeave(intersects[0].point);
-                    }
-                }
-
-                //MouseEnter on new hovered element
-                let element = this.getElementByObject(intersects[0].object);
-                if (element) {
-                    this.currentSelectedObject = intersects[0].object;
-                    this.currentSelectedElement = element;
-
-                    element.element.onMouseEnter(intersects[0].point);
-                }
-            } else {
-                //MouseLeave
-                if (this.currentSelectedObject !== null) {
-                    let element = this.getElementByObject(this.currentSelectedObject);
-                    element.element.onMouseLeave();
-                }
-
-                this.currentSelectedObject = null;
-                this.currentSelectedElement = null;
-            }
-        };
-        this.sceneContainer.addEventListener('mousemove', this.interactionMousemoveListener, false);
     }
 
     createRenderer() {
@@ -336,10 +310,6 @@ class Visualization {
         this.sceneContainer.ownerDocument.removeEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
     }
 
-    removeInteraction() {
-        this.sceneContainer.removeEventListener('mousemove', this.interactionMousemoveListener, false);
-    }
-
     removeRenderer() {
         while (this.sceneContainer.hasChildNodes()) {
             this.sceneContainer.removeChild(this.sceneContainer.lastChild);
@@ -354,9 +324,21 @@ class Visualization {
         for (let element of this.elements) {
             if (element.element.getObject() === object) {
                 return element;
-            } else if (object.parent) {
-                let parent = this.getElementByObject(object.parent);
-                if (parent !== null) return parent;
+            }
+        }
+
+        if (object.parent) {
+            let parent = this.getElementByObject(object.parent);
+            if (parent !== null) return parent;
+        }
+
+        return null;
+    }
+
+    getElementById(id) {
+        for (let element of this.elements) {
+            if (element.getId() === id) {
+                return element;
             }
         }
 
