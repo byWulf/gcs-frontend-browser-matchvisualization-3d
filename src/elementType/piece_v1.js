@@ -85,8 +85,6 @@ class piece_v1 extends ElementTypeInterface {
     }
 
     onMouseDown() {
-        this.highlightObjects = [];
-
         if (this.canBeMoved.length) {
             this.originalHighlightedObjects = this.visualization.outlinePass.selectedObjects;
             this.visualization.outlinePass.selectedObjects = [];
@@ -99,7 +97,6 @@ class piece_v1 extends ElementTypeInterface {
                 if (!object) continue;
 
                 this.visualization.outlinePass.selectedObjects.push(object);
-                this.highlightObjects.push(object);
             }
 
             return false;
@@ -112,9 +109,7 @@ class piece_v1 extends ElementTypeInterface {
     }
 
     onMouseUp() {
-        for (let i = 0; i < this.highlightObjects.length; i++) {
-            this.visualization.outlinePass.selectedObjects = this.originalHighlightedObjects;
-        }
+        this.visualization.outlinePass.selectedObjects = this.originalHighlightedObjects;
 
         let piecePosition = this.visualization.sumParentPositions(this.object);
         for (let i = 0; i < this.canBeMoved.length; i++) {
