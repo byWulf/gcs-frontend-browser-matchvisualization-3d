@@ -107,7 +107,10 @@ class Visualization {
                 if (intersects.length) {
                     let element = this.getElementByObject(intersects[0].object);
                     if (element) {
-                        let result = element.element.onMouseDown();
+                        let elementVector = this.sumParentPositions(element.element.getObject());
+                        let diff = elementVector.sub(intersects[0].point);
+
+                        let result = element.element.onMouseDown(diff);
                         if (result === false) {
                             this.currentSelectedElement = element;
                             this.sceneContainer.requestPointerLock();
