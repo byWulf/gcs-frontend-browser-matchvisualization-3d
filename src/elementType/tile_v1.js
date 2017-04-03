@@ -248,7 +248,6 @@ class tile_v1 extends ElementTypeInterface {
                     distance = currentDistance;
                 }
             }
-            console.log(this.rotation, newRotation, distance);
 
             if (Math.abs((this.rotation - 360) - this.originalRotation) === distance) this.rotation -= 360;
             if (Math.abs((this.rotation + 360) - this.originalRotation) === distance) this.rotation += 360;
