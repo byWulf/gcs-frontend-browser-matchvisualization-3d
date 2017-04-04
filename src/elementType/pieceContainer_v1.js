@@ -143,6 +143,25 @@ class pieceContainer_v1 extends ElementTypeInterface {
             }
         }
     }
+
+    getDimensions() {
+        let minX = 0;
+        let maxX = 0;
+        let minZ = 0;
+        let maxZ = 0;
+
+        for (let position of this.positions) {
+            minX = Math.min(minX, position.x - this.stackElementRadius);
+            maxX = Math.max(maxX, position.x + this.stackElementRadius);
+            minZ = Math.min(minZ, position.y - this.stackElementRadius);
+            maxZ = Math.max(maxZ, position.y + this.stackElementRadius);
+        }
+
+        return new THREE.Box3(
+            new THREE.Vector3(minX, 0, minZ),
+            new THREE.Vector3(maxX, 0, maxZ)
+        );
+    }
 }
 
 module.exports = pieceContainer_v1;

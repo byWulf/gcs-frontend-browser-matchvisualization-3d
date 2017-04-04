@@ -30,6 +30,13 @@ class board_v1 extends ElementTypeInterface {
     getTargetObject() {
         return this.targetElement;
     }
+
+    getDimensions() {
+        return new THREE.Box3(
+            new THREE.Vector3(-this.width/2, 0, -this.height/2),
+            new THREE.Vector3(this.width/2, 0.2, this.height/2)
+        );
+    }
 }
 
 module.exports = board_v1;

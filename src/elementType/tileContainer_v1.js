@@ -63,6 +63,31 @@ class tileContainer_v1 extends ElementTypeInterface {
         if (targetObject) return targetObject.userData.highlight;
         return null;
     }
+
+    getDimensions() {
+        let minX = 0;
+        let maxX = 0;
+        let minZ = 0;
+        let maxZ = 0;
+
+        for (let y in this.positions) {
+            for (let x in this.positions[y]) {
+                for (let index in this.positions[y][x]) {
+                    if (this.positions[y][x][index].children.length > 0) { //highlight will always be a child, we want to check, if there is a tile in this tileContainer position
+                        minX = Math.min(minX, this.positions[y][x][index].position.x - this.stackElementRadius / 2);
+                        maxX = Math.max(maxX, this.positions[y][x][index].position.x + this.stackElementRadius / 2);
+                        minZ = Math.min(minZ, this.positions[y][x][index].position.z - this.stackElementRadius / 2);
+                        maxZ = Math.max(maxZ, this.positions[y][x][index].position.z + this.stackElementRadius / 2);
+                    }
+                }
+            }
+        }
+
+        return new THREE.Box3(
+            new THREE.Vector3(minX, 0, minZ),
+            new THREE.Vector3(maxX, this.stackElementHeight, maxZ)
+        );
+    }
 }
 
 module.exports = tileContainer_v1;

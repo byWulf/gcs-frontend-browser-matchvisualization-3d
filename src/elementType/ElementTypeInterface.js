@@ -27,6 +27,10 @@ class ElementTypeInterface {
     onMouseDown() {}
 
     onMouseUp() {}
+
+    getDimensions() {
+        return new THREE.Box3();
+    }
 }
 
 module.exports = ElementTypeInterface;
