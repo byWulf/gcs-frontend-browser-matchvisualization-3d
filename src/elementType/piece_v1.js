@@ -5,10 +5,7 @@ require('../../lib/three/examples/js/loaders/OBJLoader');
 
 class piece_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
-
-        this.visualization = visualization;
-        this.element = element;
+        super(data, visualization, element);
 
         this.model = data.model;
         this.color = data.color;

@@ -3,7 +3,7 @@ const THREE = require('three');
 
 class board_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
+        super(data, visualization, element);
 
         this.width = data.width;
         this.height = data.height;

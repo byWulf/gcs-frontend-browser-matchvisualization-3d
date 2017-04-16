@@ -1,5 +1,8 @@
 class ElementTypeInterface {
-    constructor(data, visualization, element) { }
+    constructor(data, visualization, element) {
+        this.visualization = visualization;
+        this.element = element;
+    }
 
     getObject() {
         return this.object;
@@ -22,6 +25,8 @@ class ElementTypeInterface {
 
     onEvent(event, data) {}
 
+    onSlotChange(slots, ownUser) {}
+
     onMouseMove(movementX, movementY) {}
 
     onMouseDown() {}
@@ -31,6 +36,8 @@ class ElementTypeInterface {
     getDimensions() {
         return new THREE.Box3();
     }
+
+    onDimensionsChanged() {}
 }
 
 module.exports = ElementTypeInterface;

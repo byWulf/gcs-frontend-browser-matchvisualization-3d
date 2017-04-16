@@ -18,9 +18,7 @@ class Position {
 
 class pieceContainer_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
-
-        this.visualization = visualization;
+        super(data, visualization, element);
 
         this.object = new THREE.Group();
         this.object.name = 'pieceContainer_v1';

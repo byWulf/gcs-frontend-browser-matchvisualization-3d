@@ -4,10 +4,7 @@ const DICE = require('threejs-dice');
 
 class dice_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
-
-        this.visualization = visualization;
-        this.element = element;
+        super(data, visualization, element);
 
         this.object = new THREE.Group();
         this.object.name = 'dice_v1';

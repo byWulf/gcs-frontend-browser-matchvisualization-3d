@@ -4,10 +4,7 @@ const tileHelper = require('../helper/TileHelper');
 
 class tile_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
-
-        this.visualization = visualization;
-        this.element = element;
+        super(data, visualization, element);
 
         this.frontImage = data.frontImage;
         this.backImage = data.backImage;

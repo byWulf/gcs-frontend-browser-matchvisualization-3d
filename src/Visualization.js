@@ -15,14 +15,19 @@ const Parent = require('./Parent');
 const ElementTypes = require('./ElementTypes');
 
 class Visualization {
-    constructor(window, sceneContainer, gameKey, gameCommunicationCallback) {
+    constructor(window, sceneContainer, gameKey, gameCommunicationCallback, slots, ownUser) {
         this.window = window;
         this.sceneContainer = sceneContainer;
         this.gameKey = gameKey;
         this.gameCommunicationCallback = gameCommunicationCallback;
 
+
+        this.user = null;
+        this.slots = [];
         this.elements = [];
         this.currentSelectedElement = null;
+
+        this.handleSlotEvent(slots, ownUser);
 
         this.createScene();
         this.createWorld();
@@ -46,6 +51,48 @@ class Visualization {
     createScene() {
         this.scene = new THREE.Scene();
         this.scene.name = 'scene';
+
+        //Floor
+        let floorGeometry = new THREE.PlaneGeometry(600, 400, 1);
+        let floorMaterial = new THREE.MeshPhongMaterial({color: '#b1752d', shininess: 0});
+        let floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+        floorMesh.position.y = 0;
+        floorMesh.rotation.x = -90 * Math.PI / 180;
+        this.scene.add(floorMesh);
+
+        //Walls
+        let wallMaterial = new THREE.MeshPhongMaterial({color: '#ffffff', shininess: 0});
+        let leftRightWallGeometry = new THREE.PlaneGeometry(400, 230, 1);
+        let topBottomWallGeometry = new THREE.PlaneGeometry(600, 230, 1);
+
+        let leftWall = new THREE.Mesh(leftRightWallGeometry, wallMaterial);
+        let rightWall = new THREE.Mesh(leftRightWallGeometry, wallMaterial);
+        let topWall = new THREE.Mesh(topBottomWallGeometry, wallMaterial);
+        let bottomWall = new THREE.Mesh(topBottomWallGeometry, wallMaterial);
+
+        leftWall.position.x = -300;
+        leftWall.position.y = 115;
+        leftWall.rotation.y = 90 * Math.PI / 180;
+        this.scene.add(leftWall);
+
+        rightWall.position.x = 300;
+        rightWall.position.y = 115;
+        rightWall.rotation.y = -90 * Math.PI / 180;
+        this.scene.add(rightWall);
+
+        topWall.position.z = 200;
+        topWall.position.y = 115;
+        topWall.rotation.y = 180 * Math.PI / 180;
+        this.scene.add(topWall);
+
+        bottomWall.position.z = -200;
+        bottomWall.position.y = 115;
+        this.scene.add(bottomWall);
+
+        let ceiling = new THREE.Mesh(floorGeometry, wallMaterial);
+        ceiling.position.y = 230;
+        ceiling.rotation.x = 90 * Math.PI / 180;
+        this.scene.add(ceiling);
     }
 
     createWorld() {
@@ -64,6 +111,12 @@ class Visualization {
         this.world.addContactMaterial(
             new CANNON.ContactMaterial(this.elementBodyMaterial,    this.elementBodyMaterial, {friction: 0, restitution: 0.5})
         );
+
+        let planeBody = new CANNON.Body({mass: 0});
+        planeBody.addShape(new CANNON.Plane());
+        planeBody.material = this.environmentBodyMaterial;
+        planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        this.world.addBody(planeBody);
     }
 
     createCamera() {
@@ -79,7 +132,7 @@ class Visualization {
         this.cameraPositionContainer.name = 'cameraPositionContainer';
         this.cameraPositionContainer.position.x = 0;
         this.cameraPositionContainer.position.z = 0;
-        this.cameraPositionContainer.position.y = 130;
+        this.cameraPositionContainer.position.y = 74;
 
         this.cameraRotationContainer.add(this.camera);
         this.cameraPositionContainer.add(this.cameraRotationContainer);
@@ -223,39 +276,18 @@ class Visualization {
 
         let pointLight = new THREE.PointLight('#ffffff', 0.8);
         pointLight.name = 'pointLight';
-        pointLight.position.y = 280;
+        pointLight.position.y = 225;
         this.scene.add(pointLight);
     }
 
     createTable() {
-        let tableGroup = new THREE.Group();
-        tableGroup.name = 'tableGroup';
-        tableGroup.position.y = 130;
-
-        let planeGeometry = new THREE.PlaneGeometry(2000, 2000, 1);
-        let planeMaterial = new THREE.MeshPhongMaterial({color: '#CCB586', shininess: 0});
-        let plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.name = 'plane';
-        plane.rotation.x = -90 * Math.PI / 180;
-        plane.receiveShadow = true;
-        tableGroup.add(plane);
-
-        let planeBody = new CANNON.Body({mass: 0});
-        planeBody.addShape(new CANNON.Plane());
-        planeBody.material = this.environmentBodyMaterial;
-        planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-        this.world.addBody(planeBody);
-
         this.packageContainer = new THREE.Group();
         this.packageContainer.name = 'packageContainer';
-        this.packageContainer.position.y = 200;
-        tableGroup.add(this.packageContainer);
+        this.packageContainer.position.y = 400;
+        this.scene.add(this.packageContainer);
 
-        this.centerContainer = new THREE.Group();
-        this.centerContainer.name = 'centerContainer';
-        tableGroup.add(this.centerContainer);
-
-        this.scene.add(tableGroup);
+        let element = this.addElement('tableContainer', 'tableContainer');
+        this.scene.add(element.element.object);
     }
 
     createResizeListener() {
@@ -375,25 +407,47 @@ class Visualization {
                 elementObject.position.z = diff.z;
             }).easing(TWEEN.Easing.Quintic.Out);
 
+        let oldParentElements = this.getAllParentElementsByObject(elementObject);
+
         newParentObject.add(elementObject);
         elementObject.position.x = diff.x;
         elementObject.position.y = diff.y;
         elementObject.position.z = diff.z;
         elementObject.userData.tween.start();
+
+        let newParentElements = this.getAllParentElementsByObject(elementObject);
+
+        for (let element of oldParentElements) {
+            element.element.onDimensionsChanged();
+        }
+        for (let element of newParentElements) {
+            element.element.onDimensionsChanged();
+        }
+    }
+
+    getAllParentElementsByObject(elementObject) {
+        let elements = [];
+
+        while (elementObject.parent) {
+            let element = this.getElementByObject(elementObject.parent);
+            if (element) {
+                elements.push(element);
+            }
+
+            elementObject = elementObject.parent;
+        }
+
+        return elements;
     }
 
     findParentObject(parent) {
         let parentElement = this.elements.find(element => parent.id === element.id);
         let parentObject = null;
 
-        if (parent.id === 'centerContainer') {
-            parentObject = this.centerContainer;
-        } else if (parentElement) {
+        if (parentElement) {
              parentObject = parentElement.element.getTargetObject(parent.data);
-        }
-
-        if (!parentObject) {
-            parentObject = this.packageContainer;
+        } else {
+             parentObject = this.packageContainer;
         }
 
         return parentObject;
@@ -417,14 +471,20 @@ class Visualization {
 
         element.parent = this.createParentFromData(parentData);
 
-        element.element = new ElementTypes[element.type](elementData, this, element);
-        element.element.getObject().userData.element = element;
+        try {
+            element.element = new ElementTypes[element.type](elementData, this, element);
+        } catch (e) {
+            console.error('Failed at creating element of type "' + type + '"');
+            throw e;
+        }
 
         this.elements.push(element);
 
         this.packageContainer.add(element.element.getObject());
 
         if (element.parent.id) this.moveElementToParent(element.element.getObject(), this.findParentObject(element.parent));
+
+        return element;
     }
 
     moveElement(elementId, parentData) {
@@ -439,6 +499,8 @@ class Visualization {
         if (parentElement) {
             parentElement.element.onChildRemoved(directParentObject);
         }
+
+        return element;
     }
 
     removeElement(elementId) {
@@ -472,6 +534,15 @@ class Visualization {
         let element = this.elements.find(element => element.id === data.id);
         if (element) {
             element.element.onEvent(event, data);
+        }
+    }
+
+    handleSlotEvent(slots, ownUser) {
+        this.slots = slots;
+        this.user = ownUser;
+
+        for (let element of this.elements) {
+            element.element.onSlotChange(slots, ownUser);
         }
     }
 }

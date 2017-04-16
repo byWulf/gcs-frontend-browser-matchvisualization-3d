@@ -4,7 +4,7 @@ const tileHelper = require('../helper/TileHelper');
 
 class tileContainer_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
+        super(data, visualization, element);
 
         this.stackElementRadius = data.stackElementRadius;
         this.stackElementHeight = data.stackElementHeight;
@@ -73,7 +73,7 @@ class tileContainer_v1 extends ElementTypeInterface {
         for (let y in this.positions) {
             for (let x in this.positions[y]) {
                 for (let index in this.positions[y][x]) {
-                    if (this.positions[y][x][index].children.length > 0) { //highlight will always be a child, we want to check, if there is a tile in this tileContainer position
+                    if (this.positions[y][x][index].children.length > 1) { //highlight will always be a child, we want to check, if there is a tile in this tileContainer position
                         minX = Math.min(minX, this.positions[y][x][index].position.x - this.stackElementRadius / 2);
                         maxX = Math.max(maxX, this.positions[y][x][index].position.x + this.stackElementRadius / 2);
                         minZ = Math.min(minZ, this.positions[y][x][index].position.z - this.stackElementRadius / 2);

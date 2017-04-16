@@ -4,10 +4,7 @@ const TWEEN = require('tween.js');
 
 class autoResizeContainer_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
-        super();
-
-        this.visualization = visualization;
-        this.element = element;
+        super(data, visualization, element);
 
         this.spacing = data.spacing;
 
@@ -18,10 +15,6 @@ class autoResizeContainer_v1 extends ElementTypeInterface {
 
         this.width = 0;
         this.height = 0;
-
-        setInterval(() => {
-            this.rearrangePositions();
-        }, 1000);
     }
 
     getTargetObject(data) {
@@ -31,13 +24,13 @@ class autoResizeContainer_v1 extends ElementTypeInterface {
             this.positions[data.y][data.x] = new THREE.Group();
             this.object.add(this.positions[data.y][data.x]);
 
-            this.rearrangePositions();
+            this.onDimensionsChanged();
         }
 
         return this.positions[data.y][data.x];
     }
 
-    rearrangePositions() {
+    onDimensionsChanged() {
         let boundingBoxes = {};
         let columns = {};
         let rows = {};
