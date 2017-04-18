@@ -52,6 +52,9 @@ class Visualization {
         this.scene = new THREE.Scene();
         this.scene.name = 'scene';
 
+        let textureLoader = new THREE.TextureLoader();
+        textureLoader.crossOrigin = '';
+
         //Floor
         let floorGeometry = new THREE.PlaneGeometry(600, 400, 1);
         let floorMaterial = new THREE.MeshPhongMaterial({color: '#b1752d', shininess: 0});
@@ -61,7 +64,8 @@ class Visualization {
         this.scene.add(floorMesh);
 
         //Walls
-        let wallMaterial = new THREE.MeshPhongMaterial({color: '#ffffff', shininess: 0});
+        let wallTexture = textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/subtlepatterns/concrete_wall_2.png');
+        let wallMaterial = new THREE.MeshPhongMaterial({color: '#ffffff', shininess: 0, map: wallTexture});
         let leftRightWallGeometry = new THREE.PlaneGeometry(400, 230, 1);
         let topBottomWallGeometry = new THREE.PlaneGeometry(600, 230, 1);
 

@@ -12,9 +12,13 @@ class tableContainer extends ElementTypeInterface {
         this.object = new THREE.Group();
         this.object.position.y = tableHeight;
 
+        let textureLoader = new THREE.TextureLoader();
+        textureLoader.crossOrigin = '';
+
         //Table
         this.tableGeometry = new THREE.CylinderGeometry(1, 1, 2, 64);
-        let tableMaterial = new THREE.MeshPhongMaterial({color: '#CCB586', shininess: 0});
+        let tableTexture = textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/subtlepatterns/retina_wood.png');
+        let tableMaterial = new THREE.MeshPhongMaterial({color: '#CCB586', shininess: 0, map: tableTexture});
         this.tableMesh = new THREE.Mesh(this.tableGeometry, tableMaterial);
         this.tableMesh.name = 'tablePlate';
         this.tableMesh.receiveShadow = true;
