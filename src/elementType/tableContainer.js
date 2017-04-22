@@ -233,6 +233,8 @@ class tableContainer extends ElementTypeInterface {
     }
 
     getOwnSlotPosition() {
+        if (!this.visualization.user) return null;
+
         for (let i in this.visualization.slots) {
             if (!this.visualization.slots.hasOwnProperty(i)) continue;
 
