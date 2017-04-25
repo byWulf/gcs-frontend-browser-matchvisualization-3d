@@ -34,8 +34,10 @@ class dice_v1 extends ElementTypeInterface {
         this.canBeRolled = canBeRolled;
 
         if (canBeRolled) {
+            this.visualization.interaction.addSelectableObject(this.object);
             this.visualization.interaction.addClickableObject(this.object);
         } else {
+            this.visualization.interaction.removeSelectableObject(this.object);
             this.visualization.interaction.removeClickableObject(this.object);
         }
     }

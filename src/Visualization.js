@@ -327,7 +327,7 @@ class Visualization {
             .to({x: 0, y: 0, z: 0}, 1000)
             .onUpdate(() => {
                 elementObject.position.x = diff.x;
-                elementObject.position.y = diff.y;
+                elementObject.position.y = diff.y + (elementObject.userData.offsetY || 0);
                 elementObject.position.z = diff.z;
             }).easing(TWEEN.Easing.Quintic.Out);
 

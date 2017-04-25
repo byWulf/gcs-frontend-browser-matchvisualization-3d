@@ -1,4 +1,5 @@
 const THREE = require('three');
+const TWEEN = require('tween.js');
 
 class Interaction {
     constructor(visualization) {
@@ -6,6 +7,7 @@ class Interaction {
 
         this.selectableObjects = [];
         this.selectedObject = null;
+        this.selectionTween = null;
 
         this.clickableObjects = [];
 
@@ -69,6 +71,20 @@ class Interaction {
             element.element.onSelect();
         }
 
+        if (this.selectionTween) this.selectionTween.stop();
+
+        let position = {y: 1};
+        this.selectionTween = new TWEEN.Tween(position)
+            .to({y: 1.5}, 250)
+            .onUpdate(() => {
+                this.selectedObject.userData.offsetY = position.y;
+                this.selectedObject.position.y = position.y;
+            })
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .repeat(Infinity)
+            .yoyo(true)
+            .start();
+
         this.updateHighlightedObjects();
     }
 
@@ -79,6 +95,10 @@ class Interaction {
         if (element) {
             element.element.onUnselect();
         }
+
+        if (this.selectionTween) this.selectionTween.stop();
+        this.selectedObject.userData.offsetY = 0;
+        this.selectedObject.position.y = 0;
 
         this.selectedObject = null;
 
