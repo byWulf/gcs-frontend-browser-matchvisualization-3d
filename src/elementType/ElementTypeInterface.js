@@ -4,6 +4,8 @@ class ElementTypeInterface {
         this.element = element;
     }
 
+    applyInitialData(data) {}
+
     getObject() {
         return this.object;
     }
@@ -27,11 +29,17 @@ class ElementTypeInterface {
 
     onSlotChange(slots, ownUser) {}
 
-    onMouseMove(movementX, movementY) {}
+    onSelect() {}
 
-    onMouseDown() {}
+    onUnselect() {}
 
-    onMouseUp() {}
+    onClick(clickedObject) {}
+
+    onStartMove(mousePosition) {}
+
+    onMove(movementX, movementY) {}
+
+    onEndMove() {}
 
     getDimensions() {
         return new THREE.Box3();

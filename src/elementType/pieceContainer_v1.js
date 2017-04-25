@@ -39,7 +39,8 @@ class pieceContainer_v1 extends ElementTypeInterface {
             let highlightGeometry = new THREE.CircleGeometry(this.stackElementRadius, 32);
             let highlightMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
             position.highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-            position.highlight.rotation.x = 90 * Math.PI / 180;
+            position.highlight.rotation.x = -90 * Math.PI / 180;
+            position.highlight.position.y = 0.01;
             position.container.add(position.highlight);
 
             this.positions.push(position);

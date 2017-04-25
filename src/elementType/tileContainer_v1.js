@@ -48,7 +48,8 @@ class tileContainer_v1 extends ElementTypeInterface {
             let highlightGeometry = new THREE.ShapeGeometry(shape);
             let highlightMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
             this.positions[data.y][data.x][data.index].userData.highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-            this.positions[data.y][data.x][data.index].userData.highlight.rotation.x = 90 * Math.PI / 180;
+            this.positions[data.y][data.x][data.index].userData.highlight.rotation.x = -90 * Math.PI / 180;
+            this.positions[data.y][data.x][data.index].userData.highlight.position.y = 0.01;
             this.positions[data.y][data.x][data.index].add(this.positions[data.y][data.x][data.index].userData.highlight);
 
             this.object.add(this.positions[data.y][data.x][data.index]);

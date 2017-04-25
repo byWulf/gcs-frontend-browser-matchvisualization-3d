@@ -6,6 +6,9 @@ class tile_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
         super(data, visualization, element);
 
+        this.object = new THREE.Group();
+        this.object.name = 'tile_v1';
+
         this.frontImage = data.frontImage;
         this.backImage = data.backImage;
         this.side = data.side;
@@ -20,13 +23,7 @@ class tile_v1 extends ElementTypeInterface {
         this.canBeRotatedTo = [];
         this.doingRotation = false;
         this.canBeFlipped = false;
-
-        this.setCanBeMoved(data.canBeMovedTo);
-        this.setCanBeRotatedTo(data.canBeRotatedTo);
-        this.setCanBeFlipped(data.canBeFlipped);
-
-        this.object = new THREE.Group();
-        this.object.name = 'tile_v1';
+        this.targetObjects = [];
 
         this.sideMaterial = new THREE.MeshPhongMaterial({shininess: 0, color: '#aaaaaa'});
         this.frontMaterial = new THREE.MeshPhongMaterial({
@@ -77,6 +74,12 @@ class tile_v1 extends ElementTypeInterface {
         this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
 
         this.object.add(this.tileRotationGroup);
+    }
+
+    applyInitialData(data) {
+        this.setCanBeMoved(data.canBeMovedTo);
+        this.setCanBeRotatedTo(data.canBeRotatedTo);
+        this.setCanBeFlipped(data.canBeFlipped);
     }
 
     getImageTexture(filename) {
@@ -157,49 +160,50 @@ class tile_v1 extends ElementTypeInterface {
         }
     }
 
-    highlightIfUsable() {
-        let usable = this.canBeMoved.length || this.canBeRotatedTo.length || this.canBeFlipped;
-
-        let selectedObjectsIndex = this.visualization.outlinePass.selectedObjects.findIndex(object => object === this.object);
-        if (usable && selectedObjectsIndex === -1) {
-            this.visualization.outlinePass.selectedObjects.push(this.object);
-        } else if (!usable && selectedObjectsIndex > -1) {
-            this.visualization.outlinePass.selectedObjects.splice(selectedObjectsIndex, 1);
-        }
-    }
-
     setCanBeMoved(canBeMoved) {
         this.canBeMoved = canBeMoved;
 
-        this.highlightIfUsable();
+        if (canBeMoved.length) {
+            this.visualization.interaction.removeSelectableObject(this.object);
+
+            this.visualization.interaction.addSelectableObject(this.object);
+            this.visualization.interaction.addMoveableObject(this.object);
+        } else {
+            this.visualization.interaction.removeSelectableObject(this.object);
+            this.visualization.interaction.removeMoveableObject(this.object);
+        }
     }
 
     setCanBeRotatedTo(canBeRotatedTo) {
         this.canBeRotatedTo = canBeRotatedTo;
 
-        this.highlightIfUsable();
+        if (canBeRotatedTo.length) {
+            this.visualization.interaction.removeSelectableObject(this.object);
+
+            this.visualization.interaction.addSelectableObject(this.object);
+            this.visualization.interaction.addMoveableObject(this.object);
+        } else {
+            this.visualization.interaction.removeSelectableObject(this.object);
+            this.visualization.interaction.removeMoveableObject(this.object);
+        }
     }
 
     setCanBeFlipped(canBeFlipped) {
         this.canBeFlipped = canBeFlipped;
 
-        this.highlightIfUsable();
+        if (canBeFlipped) {
+            this.visualization.interaction.addClickableObject(this.object);
+        } else {
+            this.visualization.interaction.removeClickableObject(this.object);
+        }
     }
 
-    onMouseDown(mousePosition) {
-        if (this.canBeRotatedTo.length && mousePosition.distanceTo(new THREE.Vector3(0,0,0)) >= this.radius / 2.5) {
-            if (this.object.userData.rotationTween) this.object.userData.rotationTween.stop();
-
-            this.doingRotation = true;
-            this.originalRotation = this.rotation;
-
-            return false;
+    onClick(clickedObject) {
+        if (this.canBeFlipped) {
+            this.visualization.gameCommunicationCallback('tile.flip', this.element.getId());
         }
 
-        if (this.canBeMoved.length) {
-            this.originalHighlightedObjects = this.visualization.outlinePass.selectedObjects;
-            this.visualization.outlinePass.selectedObjects = [];
-
+        if (this.canBeMoved.length && this.targetObjects.indexOf(clickedObject) > -1) {
             for (let i = 0; i < this.canBeMoved.length; i++) {
                 let element = this.visualization.getElementById(this.canBeMoved[i].id);
                 if (!element) continue;
@@ -207,18 +211,50 @@ class tile_v1 extends ElementTypeInterface {
                 let object = element.element.getHighlightObject(this.canBeMoved[i].data);
                 if (!object) continue;
 
-                this.visualization.outlinePass.selectedObjects.push(object);
+                if (object == clickedObject) {
+                    this.visualization.gameCommunicationCallback('tile.move', this.element.getId(), {
+                        containerId: this.canBeMoved[i].id,
+                        x: this.canBeMoved[i].data.x,
+                        y: this.canBeMoved[i].data.y,
+                        index: this.canBeMoved[i].data.index
+                    });
+                    return;
+                }
             }
-
-            return false;
-        }
-
-        if (this.canBeFlipped) {
-            return false;
         }
     }
 
-    onMouseMove(movementX, movementY) {
+    onSelect() {
+        this.targetObjects = [];
+
+        for (let i = 0; i < this.canBeMoved.length; i++) {
+            let element = this.visualization.getElementById(this.canBeMoved[i].id);
+            if (!element) continue;
+
+            let object = element.element.getHighlightObject(this.canBeMoved[i].data);
+            if (!object) continue;
+
+            this.targetObjects.push(object);
+            this.visualization.interaction.addClickableObject(object, this.object);
+        }
+    }
+
+    onUnselect() {
+        for (let object of this.targetObjects) {
+            this.visualization.interaction.removeClickableObject(object, this.object);
+        }
+    }
+
+    onStartMove(mousePosition) {
+        if (this.canBeRotatedTo.length && mousePosition.distanceTo(new THREE.Vector3(0,0,0)) >= this.radius / 2.5) {
+            if (this.object.userData.rotationTween) this.object.userData.rotationTween.stop();
+
+            this.doingRotation = true;
+            this.originalRotation = this.rotation;
+        }
+    }
+
+    onMove(movementX, movementY) {
         if (this.doingRotation) {
             this.rotation -= movementX * 0.25;
             this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
@@ -228,7 +264,7 @@ class tile_v1 extends ElementTypeInterface {
         }
     }
 
-    onMouseUp() {
+    onEndMove() {
         if (this.doingRotation) {
             this.doingRotation = false;
 
@@ -257,7 +293,6 @@ class tile_v1 extends ElementTypeInterface {
 
             this.changeRotation(newRotation);
         } else if (this.canBeMoved.length) {
-            this.visualization.outlinePass.selectedObjects = this.originalHighlightedObjects;
 
             let tilePosition = this.visualization.sumParentPositions(this.object);
             for (let i = 0; i < this.canBeMoved.length; i++) {
@@ -282,10 +317,6 @@ class tile_v1 extends ElementTypeInterface {
             }
 
             this.visualization.moveElementToParent(this.object, this.object.parent);
-        }
-
-        if (this.canBeFlipped) {
-            this.visualization.gameCommunicationCallback('tile.flip', this.element.getId());
         }
     }
 

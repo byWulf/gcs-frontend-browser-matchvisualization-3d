@@ -13,6 +13,7 @@ const TWEEN = require('tween.js');
 const Element = require('./Element');
 const Parent = require('./Parent');
 const ElementTypes = require('./ElementTypes');
+const Interaction = require('./Interaction');
 
 class Visualization {
     constructor(window, sceneContainer, gameKey, gameCommunicationCallback, slots, ownUser) {
@@ -20,7 +21,7 @@ class Visualization {
         this.sceneContainer = sceneContainer;
         this.gameKey = gameKey;
         this.gameCommunicationCallback = gameCommunicationCallback;
-
+        this.interaction = new Interaction(this);
 
         this.user = null;
         this.slots = [];
@@ -142,96 +143,7 @@ class Visualization {
         this.cameraPositionContainer.add(this.cameraRotationContainer);
         this.scene.add(this.cameraPositionContainer);
 
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
-        this.currentSelectedElement = null;
-
-        this.cameraMousedownListener = (event) => {
-            //Check if a clickable element was clicked. Send the MouseDown event and lock pointer
-            if (event.button === 0) {
-                this.mouse.x = (event.offsetX / this.sceneContainer.offsetWidth) * 2 - 1;
-                this.mouse.y = - (event.offsetY / this.sceneContainer.offsetHeight) * 2 + 1;
-
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-
-                let objects = [];
-                for (let element of this.elements) {
-                    objects.push(element.element.getObject());
-                }
-
-                let intersects = this.raycaster.intersectObjects(objects, true);
-
-                if (intersects.length) {
-                    let element = this.getElementByObject(intersects[0].object);
-                    if (element) {
-                        let elementVector = this.sumParentPositions(element.element.getObject());
-                        let diff = elementVector.sub(intersects[0].point);
-
-                        let result = element.element.onMouseDown(diff);
-                        if (result === false) {
-                            this.currentSelectedElement = element;
-                            this.sceneContainer.requestPointerLock();
-                            return;
-                        }
-                    }
-                }
-            }
-
-            //No clickable element was clicked. Lock the pointer for moving/tilting camera
-            if (event.button === 0 || event.button === 2) {
-                this.sceneContainer.requestPointerLock();
-            }
-        };
-
-        this.cameraMouseupListener = (event) => {
-            if (event.button === 0 || event.button === 2) {
-                this.sceneContainer.ownerDocument.exitPointerLock();
-            }
-        };
-
-        this.cameraMousemoveListener = (event) => {
-            if (this.cameraButtonLocked) {
-                //A clickable element is currently clicked. Send MouseMove event.
-                if (event.button === 0 && this.currentSelectedElement) {
-                    this.currentSelectedElement.element.onMouseMove(event.movementX, event.movementY);
-
-                    return;
-                }
-
-                //Left mouse button = move camera
-                if (event.button === 0) {
-                    this.cameraPositionContainer.position.x = Math.max(Math.min(this.cameraPositionContainer.position.x + event.movementX * -0.1, 100), -100);
-                    this.cameraPositionContainer.position.z = Math.max(Math.min(this.cameraPositionContainer.position.z + event.movementY * -0.1, 100), -100);
-                }
-
-                //Right mouse button = tilt camera
-                if (event.button === 2) {
-                    this.cameraRotationContainer.rotation.x = Math.max(Math.min((this.cameraRotationContainer.rotation.x / Math.PI * 180) + event.movementY * -0.3, -5), -90) * Math.PI / 180
-                }
-            }
-        };
-
-        this.cameraPointerlockchangeListener = (event) => {
-            this.cameraButtonLocked = document.pointerLockElement === this.sceneContainer;
-
-            if (!this.cameraButtonLocked && this.currentSelectedElement) {
-                this.currentSelectedElement.element.onMouseUp();
-                this.currentSelectedElement = null;
-            }
-        };
-
-        this.cameraMousewheelListener = (event) => {
-	        let delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
-
-	        this.camera.position.z = Math.max(Math.min(this.camera.position.z + delta * -1, 100), 5);
-        };
-
-        this.sceneContainer.addEventListener('mousewheel', this.cameraMousewheelListener, false);
-        this.sceneContainer.addEventListener('DOMMouseScroll', this.cameraMousewheelListener, false);
-        this.sceneContainer.addEventListener('mousedown', this.cameraMousedownListener, false);
-        this.sceneContainer.addEventListener('mouseup', this.cameraMouseupListener, false);
-        this.sceneContainer.addEventListener('mousemove', this.cameraMousemoveListener, false);
-        this.sceneContainer.ownerDocument.addEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
+        this.interaction.register();
     }
 
     createRenderer() {
@@ -339,14 +251,7 @@ class Visualization {
     }
 
     removeCamera() {
-        this.sceneContainer.ownerDocument.exitPointerLock();
-
-        this.sceneContainer.removeEventListener('mousewheel', this.cameraMousewheelListener, false);
-        this.sceneContainer.removeEventListener('DOMMouseScroll', this.cameraMousewheelListener, false);
-        this.sceneContainer.removeEventListener('mousedown', this.cameraMousedownListener, false);
-        this.sceneContainer.removeEventListener('mouseup', this.cameraMouseupListener, false);
-        this.sceneContainer.removeEventListener('mousemove', this.cameraMousemoveListener, false);
-        this.sceneContainer.ownerDocument.removeEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
+        this.interaction.unregister();
     }
 
     removeRenderer() {
@@ -359,11 +264,26 @@ class Visualization {
         TWEEN.removeAll();
     }
 
+    isChildOfObject(child, object) {
+        if (child == object) return true;
+
+        if (child.object && this.isChildOfObject(child.object, object)) return true;
+
+        if (child.parent && this.isChildOfObject(child.parent, object)) return true;
+
+        return false;
+    }
+
     getElementByObject(object) {
         for (let element of this.elements) {
             if (element.element.getObject() === object) {
                 return element;
             }
+        }
+
+        if (object.object) {
+            let object = this.getElementByObject(object.object);
+            if (object !== null) return object;
         }
 
         if (object.parent) {
@@ -487,6 +407,8 @@ class Visualization {
         this.packageContainer.add(element.element.getObject());
 
         if (element.parent.id) this.moveElementToParent(element.element.getObject(), this.findParentObject(element.parent));
+
+        element.element.applyInitialData(elementData);
 
         return element;
     }

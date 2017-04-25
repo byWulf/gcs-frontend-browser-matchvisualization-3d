@@ -7,11 +7,11 @@ class piece_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
         super(data, visualization, element);
 
-        this.model = data.model;
-        this.color = data.color;
-
         this.object = new THREE.Group();
         this.object.name = 'piece_v1';
+
+        this.model = data.model;
+        this.color = data.color;
 
         let material = new THREE.MeshPhongMaterial({color: this.color, shininess: 0});
         let loader = new THREE.OBJLoader();
@@ -23,7 +23,9 @@ class piece_v1 extends ElementTypeInterface {
             object.receiveShadow = true;
             this.object.add(object);
         });
+    }
 
+    applyInitialData(data) {
         this.setLaying(data.isLaying, true);
         this.setCanBeMoved(data.canBeMovedTo);
     }
@@ -31,11 +33,12 @@ class piece_v1 extends ElementTypeInterface {
     setCanBeMoved(canBeMoved) {
         this.canBeMoved = canBeMoved;
 
-        let selectedObjectsIndex = this.visualization.outlinePass.selectedObjects.findIndex(object => object === this.object);
-        if (canBeMoved.length && selectedObjectsIndex === -1) {
-            this.visualization.outlinePass.selectedObjects.push(this.object);
-        } else if (canBeMoved.length === 0 && selectedObjectsIndex > -1) {
-            this.visualization.outlinePass.selectedObjects.splice(selectedObjectsIndex, 1);
+        if (canBeMoved.length) {
+            this.visualization.interaction.addSelectableObject(this.object);
+            this.visualization.interaction.addMoveableObject(this.object);
+        } else {
+            this.visualization.interaction.removeSelectableObject(this.object);
+            this.visualization.interaction.removeMoveableObject(this.object);
         }
     }
 
@@ -81,11 +84,8 @@ class piece_v1 extends ElementTypeInterface {
         }
     }
 
-    onMouseDown() {
-        if (this.canBeMoved.length) {
-            this.originalHighlightedObjects = this.visualization.outlinePass.selectedObjects;
-            this.visualization.outlinePass.selectedObjects = [];
-
+    onClick(clickedObject) {
+        if (this.canBeMoved && this.targetObjects.indexOf(clickedObject) > -1) {
             for (let i = 0; i < this.canBeMoved.length; i++) {
                 let element = this.visualization.getElementById(this.canBeMoved[i].id);
                 if (!element) continue;
@@ -93,21 +93,41 @@ class piece_v1 extends ElementTypeInterface {
                 let object = element.element.getHighlightObject(this.canBeMoved[i].data);
                 if (!object) continue;
 
-                this.visualization.outlinePass.selectedObjects.push(object);
+                if (object == clickedObject) {
+                    this.visualization.gameCommunicationCallback('piece.move', this.element.getId(), {containerId: this.canBeMoved[i].id, index: this.canBeMoved[i].data.index});
+                    return;
+                }
             }
-
-            return false;
         }
     }
 
-    onMouseMove(movementX, movementY) {
+    onSelect() {
+        this.targetObjects = [];
+
+        for (let i = 0; i < this.canBeMoved.length; i++) {
+            let element = this.visualization.getElementById(this.canBeMoved[i].id);
+            if (!element) continue;
+
+            let object = element.element.getHighlightObject(this.canBeMoved[i].data);
+            if (!object) continue;
+
+            this.targetObjects.push(object);
+            this.visualization.interaction.addClickableObject(object, this.object);
+        }
+    }
+
+    onUnselect() {
+        for (let object of this.targetObjects) {
+            this.visualization.interaction.removeClickableObject(object, this.object);
+        }
+    }
+
+    onMove(movementX, movementY) {
         this.object.position.x += movementX * 0.05;
         this.object.position.z += movementY * 0.05;
     }
 
-    onMouseUp() {
-        this.visualization.outlinePass.selectedObjects = this.originalHighlightedObjects;
-
+    onEndMove() {
         let piecePosition = this.visualization.sumParentPositions(this.object);
         for (let i = 0; i < this.canBeMoved.length; i++) {
             let element = this.visualization.getElementById(this.canBeMoved[i].id);

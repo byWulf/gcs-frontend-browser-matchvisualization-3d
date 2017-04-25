@@ -24,18 +24,19 @@ class dice_v1 extends ElementTypeInterface {
             dice: this.dice,
             value: data.value
         }]);
+    }
 
+    applyInitialData(data) {
         this.setCanBeRolled(data.canBeRolled);
     }
 
     setCanBeRolled(canBeRolled) {
         this.canBeRolled = canBeRolled;
 
-        let selectedObjectsIndex = this.visualization.outlinePass.selectedObjects.findIndex(object => object === this.object);
-        if (canBeRolled && selectedObjectsIndex === -1) {
-            this.visualization.outlinePass.selectedObjects.push(this.object);
-        } else if (!canBeRolled && selectedObjectsIndex > -1) {
-            this.visualization.outlinePass.selectedObjects.splice(selectedObjectsIndex, 1);
+        if (canBeRolled) {
+            this.visualization.interaction.addClickableObject(this.object);
+        } else {
+            this.visualization.interaction.removeClickableObject(this.object);
         }
     }
 
@@ -61,13 +62,7 @@ class dice_v1 extends ElementTypeInterface {
         }
     }
 
-    onMouseDown() {
-        if (this.canBeRolled) {
-            return false;
-        }
-    }
-
-    onMouseUp() {
+    onClick() {
         this.visualization.gameCommunicationCallback('dice.roll', this.element.getId(), {intensity: 1});
     }
 }
