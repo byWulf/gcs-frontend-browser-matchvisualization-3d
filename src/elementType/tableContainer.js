@@ -21,6 +21,7 @@ class tableContainer extends ElementTypeInterface {
         let tableMaterial = new THREE.MeshPhongMaterial({color: '#CCB586', shininess: 0, map: tableTexture});
         this.tableMesh = new THREE.Mesh(this.tableGeometry, tableMaterial);
         this.tableMesh.name = 'tablePlate';
+        this.tableMesh.castShadow = true;
         this.tableMesh.receiveShadow = true;
         this.tableMesh.position.y = -1;
         this.tableMesh.scale.x = 30;
@@ -34,16 +35,22 @@ class tableContainer extends ElementTypeInterface {
 
         let tableFootGeometry = new THREE.CylinderGeometry(5, 5, 65, 16);
         let tableFoot = new THREE.Mesh(tableFootGeometry, tableMaterial);
+        tableFoot.castShadow = true;
+        tableFoot.receiveShadow = true;
         tableFoot.position.y = -34.5;
         this.object.add(tableFoot);
 
         let tableSockelGeometry = new THREE.CylinderGeometry(5, 20, 5, 64);
         let tableSockel = new THREE.Mesh(tableSockelGeometry, tableMaterial);
+        tableSockel.castShadow = true;
+        tableSockel.receiveShadow = true;
         tableSockel.position.y = -69.5;
         this.object.add(tableSockel);
 
         let tableSockel2Geometry = new THREE.CylinderGeometry(20, 20, 2, 64);
         let tableSockel2 = new THREE.Mesh(tableSockel2Geometry, tableMaterial);
+        tableSockel2.castShadow = true;
+        tableSockel2.receiveShadow = true;
         tableSockel2.position.y = - 73;
         this.object.add(tableSockel2);
 
@@ -73,6 +80,8 @@ class tableContainer extends ElementTypeInterface {
             headMesh.name = 'headMesh_' + i;
             headMesh.position.y = 5;
             headMesh.position.z = 15;
+            headMesh.castShadow = true;
+            headMesh.receiveShadow = true;
             this.playerBodies[i].add(headMesh);
         }
     }

@@ -62,6 +62,7 @@ class Visualization {
         let floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
         floorMesh.position.y = 0;
         floorMesh.rotation.x = -90 * Math.PI / 180;
+        floorMesh.receiveShadow = true;
         this.scene.add(floorMesh);
 
         //Walls
@@ -78,20 +79,24 @@ class Visualization {
         leftWall.position.x = -300;
         leftWall.position.y = 115;
         leftWall.rotation.y = 90 * Math.PI / 180;
+        leftWall.receiveShadow = true;
         this.scene.add(leftWall);
 
         rightWall.position.x = 300;
         rightWall.position.y = 115;
         rightWall.rotation.y = -90 * Math.PI / 180;
+        rightWall.receiveShadow = true;
         this.scene.add(rightWall);
 
         topWall.position.z = 200;
         topWall.position.y = 115;
         topWall.rotation.y = 180 * Math.PI / 180;
+        topWall.receiveShadow = true;
         this.scene.add(topWall);
 
         bottomWall.position.z = -200;
         bottomWall.position.y = 115;
+        bottomWall.receiveShadow = true;
         this.scene.add(bottomWall);
 
         let ceiling = new THREE.Mesh(floorGeometry, wallMaterial);
@@ -131,12 +136,12 @@ class Visualization {
 
         this.cameraRotationContainer = new THREE.Group();
         this.cameraRotationContainer.name = 'cameraRotationContainer';
-        this.cameraRotationContainer.rotation.x = -45 * Math.PI / 180;
+        this.cameraRotationContainer.rotation.x = -75 * Math.PI / 180;
 
         this.cameraPositionContainer = new THREE.Group();
         this.cameraPositionContainer.name = 'cameraPositionContainer';
         this.cameraPositionContainer.position.x = 0;
-        this.cameraPositionContainer.position.z = 0;
+        this.cameraPositionContainer.position.z = -1;
         this.cameraPositionContainer.position.y = 74;
 
         this.cameraRotationContainer.add(this.camera);
@@ -151,6 +156,8 @@ class Visualization {
         this.renderer.setPixelRatio(this.window.devicePixelRatio);
         this.renderer.setSize(this.sceneContainer.offsetWidth, this.sceneContainer.offsetHeight);
         this.renderer.setClearColor('#cef3e8', 1);
+        this.renderer.shadowMapEnabled = true;
+        this.renderer.shadowMapType = THREE.PCFSoftShadowMap;
 
         this.sceneContainer.appendChild(this.renderer.domElement);
 
@@ -190,10 +197,15 @@ class Visualization {
         directionalLight.position.z = 1000;
         this.scene.add(directionalLight);
 
-        let pointLight = new THREE.PointLight('#ffffff', 0.8);
-        pointLight.name = 'pointLight';
-        pointLight.position.y = 225;
-        this.scene.add(pointLight);
+        let spotLight = new THREE.SpotLight('#ffffff', 0.8, 250, 2, 1, 0);
+        spotLight.name = 'spotLight';
+        spotLight.position.y = 225;
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 4096;
+        spotLight.shadow.mapSize.height = 4096;
+        spotLight.shadow.camera.near = 100;
+        spotLight.shadow.camera.far = 230;
+        this.scene.add(spotLight);
     }
 
     createTable() {
