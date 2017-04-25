@@ -73,6 +73,27 @@ class tile_v1 extends ElementTypeInterface {
         this.tileRotationGroup.add(this.tileSideGroup);
         this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
 
+        let textureLoader = new THREE.TextureLoader();
+        textureLoader.crossOrigin = '';
+
+        let leftTexture = textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/tile_v1/rotateLeft.png');
+        let leftMaterial = new THREE.SpriteMaterial({transparent: true, map: leftTexture});
+        this.rotateLeftSprite = new THREE.Sprite(leftMaterial);
+        this.rotateLeftSprite.position.z = this.radius / 2 + 0.5;
+        this.rotateLeftSprite.position.x = -this.radius / 2;
+        this.rotateLeftSprite.position.y = 0.5;
+        this.rotateLeftSprite.visible = false;
+        this.object.add(this.rotateLeftSprite);
+
+        let rightTexture = textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/tile_v1/rotateRight.png');
+        let rightMaterial = new THREE.SpriteMaterial({transparent: true, map: rightTexture});
+        this.rotateRightSprite = new THREE.Sprite(rightMaterial);
+        this.rotateRightSprite.position.z = this.radius / 2 + 0.5;
+        this.rotateRightSprite.position.x = this.radius / 2;
+        this.rotateRightSprite.position.y = 0.5;
+        this.rotateRightSprite.visible = false;
+        this.object.add(this.rotateRightSprite);
+
         this.object.add(this.tileRotationGroup);
     }
 
@@ -113,13 +134,22 @@ class tile_v1 extends ElementTypeInterface {
     }
 
     changeRotation(newRotation) {
+        if (this.object.userData.rotationTween) {
+            this.object.userData.rotationTween.stop();
+            this.object.userData.rotationTween = null;
+        }
+
+        let startRotation = this.tileRotationGroup.rotation.y;
+        while (startRotation > 0) startRotation -= 360 * Math.PI / 180;
+        while (startRotation <= -360) startRotation += 360 * Math.PI / 180;
+
         while (newRotation < 0) newRotation += 360;
         while (newRotation >= 360) newRotation -= 360;
-
-        if (this.object.userData.rotationTween) this.object.userData.rotationTween.stop();
-
-        let startRotation = -this.rotation * Math.PI / 180;
         let targetRotation = -newRotation * Math.PI / 180;
+
+        let rotationDiff = Math.abs(targetRotation - startRotation);
+        if (Math.abs(targetRotation + 360 * Math.PI / 180 - startRotation) < rotationDiff) startRotation -= 360 * Math.PI / 180;
+        if (Math.abs(targetRotation - 360 * Math.PI / 180 - startRotation) < rotationDiff) startRotation += 360 * Math.PI / 180;
 
         this.rotation = newRotation;
 
@@ -178,13 +208,23 @@ class tile_v1 extends ElementTypeInterface {
         this.canBeRotatedTo = canBeRotatedTo;
 
         if (canBeRotatedTo.length) {
+            this.rotateLeftSprite.visible = true;
+            this.rotateRightSprite.visible = true;
+
             this.visualization.interaction.removeSelectableObject(this.object);
 
             this.visualization.interaction.addSelectableObject(this.object);
             this.visualization.interaction.addMoveableObject(this.object);
+            this.visualization.interaction.addClickableObject(this.rotateLeftSprite, this.object);
+            this.visualization.interaction.addClickableObject(this.rotateRightSprite, this.object);
         } else {
+            this.rotateLeftSprite.visible = false;
+            this.rotateRightSprite.visible = false;
+
             this.visualization.interaction.removeSelectableObject(this.object);
             this.visualization.interaction.removeMoveableObject(this.object);
+            this.visualization.interaction.removeClickableObject(this.rotateLeftSprite, this.object);
+            this.visualization.interaction.removeClickableObject(this.rotateRightSprite, this.object);
         }
     }
 
@@ -199,9 +239,6 @@ class tile_v1 extends ElementTypeInterface {
     }
 
     onClick(clickedObject) {
-        if (this.canBeFlipped) {
-            this.visualization.gameCommunicationCallback('tile.flip', this.element.getId());
-        }
 
         if (this.canBeMoved.length && this.targetObjects.indexOf(clickedObject) > -1) {
             for (let i = 0; i < this.canBeMoved.length; i++) {
@@ -221,6 +258,36 @@ class tile_v1 extends ElementTypeInterface {
                     return;
                 }
             }
+        }
+
+        if (this.canBeRotatedTo.length && clickedObject == this.rotateLeftSprite) {
+            let currentIndex = this.canBeRotatedTo.indexOf(this.rotation);
+            if (currentIndex == -1) currentIndex = 0;
+
+            let targetRotation = this.canBeRotatedTo[(currentIndex + 1) % this.canBeRotatedTo.length];
+            this.rotation = targetRotation;
+            this.visualization.gameCommunicationCallback('tile.rotate', this.element.getId(), {
+                rotation: targetRotation
+            });
+
+            return;
+        }
+
+        if (this.canBeRotatedTo.length && clickedObject == this.rotateRightSprite) {
+            let currentIndex = this.canBeRotatedTo.indexOf(this.rotation);
+            if (currentIndex == -1) currentIndex = 0;
+
+            let targetRotation = this.canBeRotatedTo[(currentIndex + this.canBeRotatedTo.length - 1) % this.canBeRotatedTo.length];
+            this.rotation = targetRotation;
+            this.visualization.gameCommunicationCallback('tile.rotate', this.element.getId(), {
+                rotation: targetRotation
+            });
+
+            return;
+        }
+
+        if (this.canBeFlipped) {
+            this.visualization.gameCommunicationCallback('tile.flip', this.element.getId());
         }
     }
 
@@ -247,15 +314,18 @@ class tile_v1 extends ElementTypeInterface {
 
     onStartMove(mousePosition) {
         if (this.canBeRotatedTo.length && mousePosition.distanceTo(new THREE.Vector3(0,0,0)) >= this.radius / 2.5) {
-            if (this.object.userData.rotationTween) this.object.userData.rotationTween.stop();
-
             this.doingRotation = true;
             this.originalRotation = this.rotation;
         }
     }
 
     onMove(movementX, movementY) {
-        if (this.doingRotation) {
+        if (this.doingRotation && (movementX || movementY)) {
+            if (this.object.userData.rotationTween) {
+                this.object.userData.rotationTween.stop();
+                this.object.userData.rotationTween = null;
+            }
+
             this.rotation -= movementX * 0.25;
             this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
         } else if (this.canBeMoved.length) {
@@ -290,8 +360,6 @@ class tile_v1 extends ElementTypeInterface {
                     rotation: newRotation
                 });
             }
-
-            this.changeRotation(newRotation);
         } else if (this.canBeMoved.length) {
 
             let tilePosition = this.visualization.sumParentPositions(this.object);
