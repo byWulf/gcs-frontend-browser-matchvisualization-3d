@@ -19,6 +19,7 @@ class tile_v1 extends ElementTypeInterface {
         this.radius = data.radius;
         this.form = data.form;
         this.originalParent = null;
+        this.currentCanBeMoved = null;
 
         this.canBeMoved = [];
         this.canBeRotatedTo = [];
@@ -183,6 +184,8 @@ class tile_v1 extends ElementTypeInterface {
             }).easing(TWEEN.Easing.Quintic.Out);
 
         this.object.userData.rotationTween.start();
+
+        if (this.currentCanBeMoved !== null) this.showAcceptDecline();
     }
 
     changeFrontImage(newFrontImage) {
@@ -261,9 +264,15 @@ class tile_v1 extends ElementTypeInterface {
     }
 
     showAcceptDecline() {
-        this.acceptSprite.material.opacity = 1;
+        if (this.currentCanBeMoved.rotations.indexOf(this.rotation) > -1) {
+            this.acceptSprite.material.opacity = 1;
+            this.visualization.interaction.addClickableObject(this.acceptSprite, this.object, false);
+        } else {
+            this.acceptSprite.material.opacity = 0;
+            this.visualization.interaction.removeClickableObject(this.acceptSprite, this.object);
+        }
+
         this.declineSprite.material.opacity = 1;
-        this.visualization.interaction.addClickableObject(this.acceptSprite, this.object, false);
         this.visualization.interaction.addClickableObject(this.declineSprite, this.object, false);
     }
 
@@ -276,30 +285,31 @@ class tile_v1 extends ElementTypeInterface {
 
     onClick(clickedObject) {
         if (clickedObject == this.declineSprite) {
-            console.log(this.originalParent);
             this.visualization.moveElementToParent(this.object, this.originalParent);
             this.originalParent = null;
+            this.currentCanBeMoved = null;
 
             this.hideAcceptDecline();
         }
         if (clickedObject == this.acceptSprite) {
             this.visualization.gameCommunicationCallback('tile.move', this.element.getId(), {
-                containerId: this.currentCanBeMoved.id,
-                x: this.currentCanBeMoved.data.x,
-                y: this.currentCanBeMoved.data.y,
-                index: this.currentCanBeMoved.data.index
+                containerId: this.currentCanBeMoved.target.id,
+                x: this.currentCanBeMoved.target.data.x,
+                y: this.currentCanBeMoved.target.data.y,
+                index: this.currentCanBeMoved.target.data.index
             });
             this.originalParent = null;
+            this.currentCanBeMoved = null;
 
             this.hideAcceptDecline();
         }
 
         if (this.canBeMoved.length && this.targetObjects.indexOf(clickedObject) > -1) {
             for (let i = 0; i < this.canBeMoved.length; i++) {
-                let element = this.visualization.getElementById(this.canBeMoved[i].id);
+                let element = this.visualization.getElementById(this.canBeMoved[i].target.id);
                 if (!element) continue;
 
-                let object = element.element.getHighlightObject(this.canBeMoved[i].data);
+                let object = element.element.getHighlightObject(this.canBeMoved[i].target.data);
                 if (!object) continue;
 
                 if (object == clickedObject) {
@@ -347,10 +357,10 @@ class tile_v1 extends ElementTypeInterface {
         this.targetObjects = [];
 
         for (let i = 0; i < this.canBeMoved.length; i++) {
-            let element = this.visualization.getElementById(this.canBeMoved[i].id);
+            let element = this.visualization.getElementById(this.canBeMoved[i].target.id);
             if (!element) continue;
 
-            let object = element.element.getHighlightObject(this.canBeMoved[i].data);
+            let object = element.element.getHighlightObject(this.canBeMoved[i].target.data);
             if (!object) continue;
 
             this.targetObjects.push(object);
@@ -366,6 +376,7 @@ class tile_v1 extends ElementTypeInterface {
         if (this.originalParent) {
             this.visualization.moveElementToParent(this.object, this.originalParent);
             this.originalParent = null;
+            this.currentCanBeMoved = null;
         }
 
         this.hideAcceptDecline();
@@ -388,6 +399,9 @@ class tile_v1 extends ElementTypeInterface {
             this.rotation -= movementX * 0.25;
             this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
         } else if (this.canBeMoved.length) {
+            if (movementX || movementY) {
+                if (this.object.userData.tween) this.object.userData.tween.stop();
+            }
             this.object.position.x += movementX * 0.05;
             this.object.position.z += movementY * 0.05;
         }
@@ -423,10 +437,10 @@ class tile_v1 extends ElementTypeInterface {
 
             let tilePosition = this.visualization.sumParentPositions(this.object);
             for (let i = 0; i < this.canBeMoved.length; i++) {
-                let element = this.visualization.getElementById(this.canBeMoved[i].id);
+                let element = this.visualization.getElementById(this.canBeMoved[i].target.id);
                 if (!element) continue;
 
-                let object = element.element.getHighlightObject(this.canBeMoved[i].data);
+                let object = element.element.getHighlightObject(this.canBeMoved[i].target.data);
                 if (!object) continue;
 
                 let targetPosition = this.visualization.sumParentPositions(object);
@@ -436,13 +450,15 @@ class tile_v1 extends ElementTypeInterface {
                     if (this.originalParent === null) this.originalParent = this.object.parent;
                     this.currentCanBeMoved = this.canBeMoved[i];
                     this.visualization.moveElementToParent(this.object, object.parent);
-                    this.acceptSprite.material.opacity = 1;
-                    this.declineSprite.material.opacity = 1;
-                    this.visualization.interaction.addClickableObject(this.acceptSprite, this.object, false);
-                    this.visualization.interaction.addClickableObject(this.declineSprite, this.object, false);
+                    this.showAcceptDecline();
                     return;
                 }
             }
+
+            this.visualization.moveElementToParent(this.object, this.originalParent !== null ? this.originalParent : this.object.parent);
+            this.originalParent = null;
+            this.currentCanBeMoved = null;
+            this.hideAcceptDecline();
         }
     }
 
