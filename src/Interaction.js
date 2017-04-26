@@ -17,43 +17,55 @@ class Interaction {
     updateHighlightedObjects() {
         let highlightObjects = [];
 
-        for (let object of this.selectableObjects) highlightObjects.push(object);
-        for (let object of this.clickableObjects)  highlightObjects.push(object.object);
-        for (let object of this.moveableObjects)   highlightObjects.push(object);
+        for (let object of this.selectableObjects.filter((value) => value.highlight && value.object != this.selectedObject)) {
+            highlightObjects.push(object.object);
+        }
+        for (let object of this.clickableObjects.filter((value) => value.highlight)) {
+            highlightObjects.push(object.object);
+        }
+        for (let object of this.moveableObjects.filter((value) => value.highlight && value.object != this.selectedObject)) {
+            highlightObjects.push(object.object);
+        }
+
+        highlightObjects = highlightObjects.filter((value, index, self) => self.indexOf(value) === index);
 
         this.visualization.outlinePass.selectedObjects = highlightObjects;
     }
 
-    addSelectableObject(elementObject) {
-        let index = this.selectableObjects.indexOf(elementObject);
-
-        if (index == -1) {
-            this.selectableObjects.push(elementObject);
-
-            if (this.selectableObjects.length == 1) {
-                this.selectObject(elementObject);
-            } else {
-                this.unselectObject();
+    addSelectableObject(elementObject, highlight) {
+        for (let element of this.selectableObjects) {
+            if (element.object == elementObject) {
+                return;
             }
-
-            this.updateHighlightedObjects();
         }
+
+        this.selectableObjects.push({object: elementObject, highlight: typeof highlight === 'undefined' || !!highlight});
+
+        if (this.selectableObjects.length == 1) {
+            this.selectObject(elementObject);
+        } else {
+            this.unselectObject();
+        }
+
+        this.updateHighlightedObjects();
     }
 
     removeSelectableObject(elementObject) {
-        let index = this.selectableObjects.indexOf(elementObject);
+        for (let i = 0; i < this.selectableObjects.length; i++) {
+            if (this.selectableObjects[i].object == elementObject) {
+                this.selectableObjects.splice(i, 1);
 
-        if (index > -1) {
-            this.selectableObjects.splice(index, 1);
+                if (this.selectedObject == elementObject) {
+                    this.unselectObject();
+                }
+                if (this.selectableObjects.length == 1) {
+                    this.selectObject(this.selectableObjects[0].object);
+                }
 
-            if (this.selectedObject == elementObject) {
-                this.unselectObject();
+                this.updateHighlightedObjects();
+
+                return;
             }
-            if (this.selectableObjects.length == 1) {
-                this.selectObject(this.selectableObjects[0]);
-            }
-
-            this.updateHighlightedObjects();
         }
     }
 
@@ -105,14 +117,14 @@ class Interaction {
         this.updateHighlightedObjects();
     }
 
-    addClickableObject(elementObject, eventTarget) {
+    addClickableObject(elementObject, eventTarget, highlight) {
         for (let clickableObject of this.clickableObjects) {
             if (clickableObject.object == elementObject && clickableObject.eventTarget == eventTarget) {
                 return;
             }
         }
 
-        this.clickableObjects.push({object: elementObject, eventTarget: eventTarget});
+        this.clickableObjects.push({object: elementObject, eventTarget: eventTarget, highlight: typeof highlight === 'undefined' || !!highlight});
 
         this.updateHighlightedObjects();
     }
@@ -129,23 +141,25 @@ class Interaction {
         }
     }
 
-    addMoveableObject(elementObject) {
-        let index = this.moveableObjects.indexOf(elementObject);
-
-        if (index == -1) {
-            this.moveableObjects.push(elementObject);
-
-            this.updateHighlightedObjects();
+    addMoveableObject(elementObject, highlight) {
+        for (let element of this.moveableObjects) {
+            if (element.object == elementObject) {
+                return;
+            }
         }
+
+        this.moveableObjects.push({object: elementObject, highlight: typeof highlight === 'undefined' || !!highlight});
+
+        this.updateHighlightedObjects();
     }
 
     removeMoveableObject(elementObject) {
-        let index = this.moveableObjects.indexOf(elementObject);
+        for (let i = 0; i < this.moveableObjects.length; i++) {
+            if (this.moveableObjects[i].object == elementObject) {
+                this.moveableObjects.splice(i, 1);
 
-        if (index > -1) {
-            this.moveableObjects.splice(index, 1);
-
-            this.updateHighlightedObjects();
+                this.updateHighlightedObjects();
+            }
         }
     }
 
@@ -164,9 +178,12 @@ class Interaction {
                 this.raycaster.setFromCamera(this.mouse, this.visualization.camera);
 
                 //Selectable objects
-                let selectableIntersections = this.raycaster.intersectObjects(this.selectableObjects, true);
+                let selectableObjects = [];
+                for (let element of this.selectableObjects) selectableObjects.push(element.object);
+
+                let selectableIntersections = this.raycaster.intersectObjects(selectableObjects, true);
                 if (selectableIntersections.length) {
-                    for (let selectableObject of this.selectableObjects) {
+                    for (let selectableObject of selectableObjects) {
                         if (this.visualization.isChildOfObject(selectableIntersections[0].object, selectableObject)) {
                             this.selectObject(selectableObject);
 
@@ -197,9 +214,12 @@ class Interaction {
                 }
 
                 //Moveable objects
-                let moveableIntersections = this.raycaster.intersectObjects(this.moveableObjects, true);
+                let moveableObjects = [];
+                for (let element of this.moveableObjects) moveableObjects.push(element.object);
+
+                let moveableIntersections = this.raycaster.intersectObjects(moveableObjects, true);
                 if (moveableIntersections.length) {
-                    for (let moveableObject of this.moveableObjects) {
+                    for (let moveableObject of moveableObjects) {
                         if (this.visualization.isChildOfObject(moveableIntersections[0].object, moveableObject)) {
                             let element = this.visualization.getElementByObject(moveableObject);
                             if (element) {

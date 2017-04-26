@@ -18,6 +18,7 @@ class tile_v1 extends ElementTypeInterface {
         this.height = data.height;
         this.radius = data.radius;
         this.form = data.form;
+        this.originalParent = null;
 
         this.canBeMoved = [];
         this.canBeRotatedTo = [];
@@ -73,28 +74,49 @@ class tile_v1 extends ElementTypeInterface {
         this.tileRotationGroup.add(this.tileSideGroup);
         this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
 
-        let textureLoader = new THREE.TextureLoader();
-        textureLoader.crossOrigin = '';
+        this.textureLoader = new THREE.TextureLoader();
+        this.textureLoader.crossOrigin = '';
 
-        let leftTexture = textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/tile_v1/rotateLeft.png');
-        let leftMaterial = new THREE.SpriteMaterial({transparent: true, map: leftTexture});
-        this.rotateLeftSprite = new THREE.Sprite(leftMaterial);
-        this.rotateLeftSprite.position.z = this.radius / 2 + 0.5;
-        this.rotateLeftSprite.position.x = -this.radius / 2;
-        this.rotateLeftSprite.position.y = 0.5;
-        this.rotateLeftSprite.visible = false;
+        this.rotateLeftSprite = this.createSprite(
+            'rotateRight.png',
+            new THREE.Vector3(-this.radius / 2, 0.5, this.radius / 2 + 0.5),
+            new THREE.Vector3(2, 2, 2)
+        );
         this.object.add(this.rotateLeftSprite);
 
-        let rightTexture = textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/tile_v1/rotateRight.png');
-        let rightMaterial = new THREE.SpriteMaterial({transparent: true, map: rightTexture});
-        this.rotateRightSprite = new THREE.Sprite(rightMaterial);
-        this.rotateRightSprite.position.z = this.radius / 2 + 0.5;
-        this.rotateRightSprite.position.x = this.radius / 2;
-        this.rotateRightSprite.position.y = 0.5;
-        this.rotateRightSprite.visible = false;
+        this.rotateRightSprite = this.createSprite(
+            'rotateLeft.png',
+            new THREE.Vector3(this.radius / 2, 0.5, this.radius / 2 + 0.5),
+            new THREE.Vector3(2, 2, 2)
+        );
         this.object.add(this.rotateRightSprite);
 
+        this.acceptSprite = this.createSprite(
+            'ok.png',
+            new THREE.Vector3(1, 0.5, -this.radius / 2),
+            new THREE.Vector3(2, 2, 2)
+        );
+        this.object.add(this.acceptSprite);
+
+        this.declineSprite = this.createSprite(
+            'cancel.png',
+            new THREE.Vector3(-1, 0.5, -this.radius / 2),
+            new THREE.Vector3(2, 2, 2)
+        );
+        this.object.add(this.declineSprite);
+
         this.object.add(this.tileRotationGroup);
+    }
+
+    createSprite(image, position, scale) {
+
+        let texture = this.textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/tile_v1/' + image);
+        let material = new THREE.SpriteMaterial({transparent: true, map: texture, opacity: 0});
+        let sprite = new THREE.Sprite(material);
+        sprite.position.set(position.x, position.y, position.z);
+        sprite.scale.set(scale.x, scale.y, scale.z);
+
+        return sprite;
     }
 
     applyInitialData(data) {
@@ -208,18 +230,18 @@ class tile_v1 extends ElementTypeInterface {
         this.canBeRotatedTo = canBeRotatedTo;
 
         if (canBeRotatedTo.length) {
-            this.rotateLeftSprite.visible = true;
-            this.rotateRightSprite.visible = true;
+            this.rotateLeftSprite.material.opacity = 1;
+            this.rotateRightSprite.material.opacity = 1;
 
             this.visualization.interaction.removeSelectableObject(this.object);
 
             this.visualization.interaction.addSelectableObject(this.object);
             this.visualization.interaction.addMoveableObject(this.object);
-            this.visualization.interaction.addClickableObject(this.rotateLeftSprite, this.object);
-            this.visualization.interaction.addClickableObject(this.rotateRightSprite, this.object);
+            this.visualization.interaction.addClickableObject(this.rotateLeftSprite, this.object, false);
+            this.visualization.interaction.addClickableObject(this.rotateRightSprite, this.object, false);
         } else {
-            this.rotateLeftSprite.visible = false;
-            this.rotateRightSprite.visible = false;
+            this.rotateLeftSprite.material.opacity = 0;
+            this.rotateRightSprite.material.opacity = 0;
 
             this.visualization.interaction.removeSelectableObject(this.object);
             this.visualization.interaction.removeMoveableObject(this.object);
@@ -238,7 +260,39 @@ class tile_v1 extends ElementTypeInterface {
         }
     }
 
+    showAcceptDecline() {
+        this.acceptSprite.material.opacity = 1;
+        this.declineSprite.material.opacity = 1;
+        this.visualization.interaction.addClickableObject(this.acceptSprite, this.object, false);
+        this.visualization.interaction.addClickableObject(this.declineSprite, this.object, false);
+    }
+
+    hideAcceptDecline() {
+        this.acceptSprite.material.opacity = 0;
+        this.declineSprite.material.opacity = 0;
+        this.visualization.interaction.removeClickableObject(this.acceptSprite, this.object);
+        this.visualization.interaction.removeClickableObject(this.declineSprite, this.object);
+    }
+
     onClick(clickedObject) {
+        if (clickedObject == this.declineSprite) {
+            console.log(this.originalParent);
+            this.visualization.moveElementToParent(this.object, this.originalParent);
+            this.originalParent = null;
+
+            this.hideAcceptDecline();
+        }
+        if (clickedObject == this.acceptSprite) {
+            this.visualization.gameCommunicationCallback('tile.move', this.element.getId(), {
+                containerId: this.currentCanBeMoved.id,
+                x: this.currentCanBeMoved.data.x,
+                y: this.currentCanBeMoved.data.y,
+                index: this.currentCanBeMoved.data.index
+            });
+            this.originalParent = null;
+
+            this.hideAcceptDecline();
+        }
 
         if (this.canBeMoved.length && this.targetObjects.indexOf(clickedObject) > -1) {
             for (let i = 0; i < this.canBeMoved.length; i++) {
@@ -249,12 +303,10 @@ class tile_v1 extends ElementTypeInterface {
                 if (!object) continue;
 
                 if (object == clickedObject) {
-                    this.visualization.gameCommunicationCallback('tile.move', this.element.getId(), {
-                        containerId: this.canBeMoved[i].id,
-                        x: this.canBeMoved[i].data.x,
-                        y: this.canBeMoved[i].data.y,
-                        index: this.canBeMoved[i].data.index
-                    });
+                    if (this.originalParent === null) this.originalParent = this.object.parent;
+                    this.currentCanBeMoved = this.canBeMoved[i];
+                    this.visualization.moveElementToParent(this.object, object.parent);
+                    this.showAcceptDecline();
                     return;
                 }
             }
@@ -264,7 +316,7 @@ class tile_v1 extends ElementTypeInterface {
             let currentIndex = this.canBeRotatedTo.indexOf(this.rotation);
             if (currentIndex == -1) currentIndex = 0;
 
-            let targetRotation = this.canBeRotatedTo[(currentIndex + 1) % this.canBeRotatedTo.length];
+            let targetRotation = this.canBeRotatedTo[(currentIndex + this.canBeRotatedTo.length - 1) % this.canBeRotatedTo.length];
             this.rotation = targetRotation;
             this.visualization.gameCommunicationCallback('tile.rotate', this.element.getId(), {
                 rotation: targetRotation
@@ -277,7 +329,7 @@ class tile_v1 extends ElementTypeInterface {
             let currentIndex = this.canBeRotatedTo.indexOf(this.rotation);
             if (currentIndex == -1) currentIndex = 0;
 
-            let targetRotation = this.canBeRotatedTo[(currentIndex + this.canBeRotatedTo.length - 1) % this.canBeRotatedTo.length];
+            let targetRotation = this.canBeRotatedTo[(currentIndex + 1) % this.canBeRotatedTo.length];
             this.rotation = targetRotation;
             this.visualization.gameCommunicationCallback('tile.rotate', this.element.getId(), {
                 rotation: targetRotation
@@ -310,6 +362,13 @@ class tile_v1 extends ElementTypeInterface {
         for (let object of this.targetObjects) {
             this.visualization.interaction.removeClickableObject(object, this.object);
         }
+
+        if (this.originalParent) {
+            this.visualization.moveElementToParent(this.object, this.originalParent);
+            this.originalParent = null;
+        }
+
+        this.hideAcceptDecline();
     }
 
     onStartMove(mousePosition) {
@@ -374,17 +433,16 @@ class tile_v1 extends ElementTypeInterface {
                 let line3 = new THREE.Line3(tilePosition, targetPosition);
 
                 if (line3.distance() - (element.element.stackElementRadius / 2) <= 0) {
-                    this.visualization.gameCommunicationCallback('tile.move', this.element.getId(), {
-                        containerId: this.canBeMoved[i].id,
-                        x: this.canBeMoved[i].data.x,
-                        y: this.canBeMoved[i].data.y,
-                        index: this.canBeMoved[i].data.index
-                    });
+                    if (this.originalParent === null) this.originalParent = this.object.parent;
+                    this.currentCanBeMoved = this.canBeMoved[i];
+                    this.visualization.moveElementToParent(this.object, object.parent);
+                    this.acceptSprite.material.opacity = 1;
+                    this.declineSprite.material.opacity = 1;
+                    this.visualization.interaction.addClickableObject(this.acceptSprite, this.object, false);
+                    this.visualization.interaction.addClickableObject(this.declineSprite, this.object, false);
                     return;
                 }
             }
-
-            this.visualization.moveElementToParent(this.object, this.object.parent);
         }
     }
 
