@@ -13,6 +13,9 @@ class piece_v1 extends ElementTypeInterface {
         this.model = data.model;
         this.color = data.color;
 
+        this.originalParent = null;
+        this.currentCanBeMoved = null;
+
         let material = new THREE.MeshPhongMaterial({color: this.color, shininess: 0});
         let loader = new THREE.OBJLoader();
         loader.load(document.location.protocol + '//' + document.location.hostname + ':3699/' + visualization.gameKey + '/' + this.model, (object) => {
@@ -25,11 +28,55 @@ class piece_v1 extends ElementTypeInterface {
             object.receiveShadow = true;
             this.object.add(object);
         });
+
+        this.textureLoader = new THREE.TextureLoader();
+        this.textureLoader.crossOrigin = '';
+
+        this.acceptSprite = this.createSprite(
+            'ok.png',
+            new THREE.Vector3(1, 0.5, 2),
+            new THREE.Vector3(2, 2, 2)
+        );
+        this.object.add(this.acceptSprite);
+
+        this.declineSprite = this.createSprite(
+            'cancel.png',
+            new THREE.Vector3(-1, 0.5, 2),
+            new THREE.Vector3(2, 2, 2)
+        );
+        this.object.add(this.declineSprite);
+
+    }
+
+    createSprite(image, position, scale) {
+
+        let texture = this.textureLoader.load('/node_modules/gcs-frontend-browser-matchvisualization-3d/public/piece_v1/' + image);
+        let material = new THREE.SpriteMaterial({transparent: true, map: texture, opacity: 0});
+        let sprite = new THREE.Sprite(material);
+        sprite.position.set(position.x, position.y, position.z);
+        sprite.scale.set(scale.x, scale.y, scale.z);
+
+        return sprite;
     }
 
     applyInitialData(data) {
         this.setLaying(data.isLaying, true);
         this.setCanBeMoved(data.canBeMovedTo);
+    }
+
+    showAcceptDecline() {
+        this.acceptSprite.material.opacity = 1;
+        this.visualization.interaction.addClickableObject(this.acceptSprite, this.object, false);
+
+        this.declineSprite.material.opacity = 1;
+        this.visualization.interaction.addClickableObject(this.declineSprite, this.object, false);
+    }
+
+    hideAcceptDecline() {
+        this.acceptSprite.material.opacity = 0;
+        this.declineSprite.material.opacity = 0;
+        this.visualization.interaction.removeClickableObject(this.acceptSprite, this.object);
+        this.visualization.interaction.removeClickableObject(this.declineSprite, this.object);
     }
 
     setCanBeMoved(canBeMoved) {
@@ -87,6 +134,21 @@ class piece_v1 extends ElementTypeInterface {
     }
 
     onClick(clickedObject) {
+        if (clickedObject == this.declineSprite) {
+            this.visualization.moveElementToParent(this.object, this.originalParent);
+            this.originalParent = null;
+            this.currentCanBeMoved = null;
+
+            this.hideAcceptDecline();
+        }
+        if (clickedObject == this.acceptSprite) {
+            this.visualization.gameCommunicationCallback('piece.move', this.element.getId(), {containerId: this.currentCanBeMoved.id, index: this.currentCanBeMoved.data.index});
+            this.originalParent = null;
+            this.currentCanBeMoved = null;
+
+            this.hideAcceptDecline();
+        }
+
         if (this.canBeMoved && this.targetObjects.indexOf(clickedObject) > -1) {
             for (let i = 0; i < this.canBeMoved.length; i++) {
                 let element = this.visualization.getElementById(this.canBeMoved[i].id);
@@ -96,7 +158,10 @@ class piece_v1 extends ElementTypeInterface {
                 if (!object) continue;
 
                 if (object == clickedObject) {
-                    this.visualization.gameCommunicationCallback('piece.move', this.element.getId(), {containerId: this.canBeMoved[i].id, index: this.canBeMoved[i].data.index});
+                    if (this.originalParent === null) this.originalParent = this.object.parent;
+                    this.currentCanBeMoved = this.canBeMoved[i];
+                    this.visualization.moveElementToParent(this.object, object.parent);
+                    this.showAcceptDecline();
                     return;
                 }
             }
@@ -122,9 +187,21 @@ class piece_v1 extends ElementTypeInterface {
         for (let object of this.targetObjects) {
             this.visualization.interaction.removeClickableObject(object, this.object);
         }
+
+        if (this.originalParent) {
+            this.visualization.moveElementToParent(this.object, this.originalParent);
+            this.originalParent = null;
+            this.currentCanBeMoved = null;
+        }
+
+        this.hideAcceptDecline();
     }
 
     onMove(movementX, movementY) {
+        if (movementX || movementY) {
+            if (this.object.userData.tween) this.object.userData.tween.stop();
+        }
+
         this.object.position.x += movementX * 0.05;
         this.object.position.z += movementY * 0.05;
     }
@@ -142,12 +219,18 @@ class piece_v1 extends ElementTypeInterface {
             let line3 = new THREE.Line3(piecePosition, targetPosition);
 
             if (line3.distance() - element.element.stackElementRadius <= 0) {
-                this.visualization.gameCommunicationCallback('piece.move', this.element.getId(), {containerId: this.canBeMoved[i].id, index: this.canBeMoved[i].data.index});
+                if (this.originalParent === null) this.originalParent = this.object.parent;
+                this.currentCanBeMoved = this.canBeMoved[i];
+                this.visualization.moveElementToParent(this.object, object.parent);
+                this.showAcceptDecline();
                 return;
             }
         }
 
-        this.visualization.moveElementToParent(this.object, this.object.parent);
+        this.visualization.moveElementToParent(this.object, this.originalParent !== null ? this.originalParent : this.object.parent);
+        this.originalParent = null;
+        this.currentCanBeMoved = null;
+        this.hideAcceptDecline();
     }
 }
 

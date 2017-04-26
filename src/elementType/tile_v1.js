@@ -74,6 +74,7 @@ class tile_v1 extends ElementTypeInterface {
         this.tileRotationGroup = new THREE.Group();
         this.tileRotationGroup.add(this.tileSideGroup);
         this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
+        this.object.add(this.tileRotationGroup);
 
         this.textureLoader = new THREE.TextureLoader();
         this.textureLoader.crossOrigin = '';
@@ -106,7 +107,6 @@ class tile_v1 extends ElementTypeInterface {
         );
         this.object.add(this.declineSprite);
 
-        this.object.add(this.tileRotationGroup);
     }
 
     createSprite(image, position, scale) {
