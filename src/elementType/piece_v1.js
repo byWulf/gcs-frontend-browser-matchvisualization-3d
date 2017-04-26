@@ -18,6 +18,8 @@ class piece_v1 extends ElementTypeInterface {
         loader.load(document.location.protocol + '//' + document.location.hostname + ':3699/' + visualization.gameKey + '/' + this.model, (object) => {
             for (let mesh of object.children) {
                 mesh.material = material;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
             }
             object.castShadow = true;
             object.receiveShadow = true;
