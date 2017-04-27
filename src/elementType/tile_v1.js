@@ -34,7 +34,7 @@ class tile_v1 extends ElementTypeInterface {
         });
         this.backMaterial = new THREE.MeshPhongMaterial({
             shininess: 0,
-            map: this.getImageTexture(this.backImage)
+            map: this.getImageTexture(this.backImage, true)
         });
 
         let shape = null;
@@ -75,6 +75,10 @@ class tile_v1 extends ElementTypeInterface {
         this.tileRotationGroup.add(this.tileSideGroup);
         this.tileRotationGroup.rotation.y = -this.rotation * Math.PI / 180;
         this.object.add(this.tileRotationGroup);
+
+        this.targetGroup = new THREE.Group();
+        this.targetGroup.position.y = this.height;
+        this.tileRotationGroup.add(this.targetGroup);
 
         this.textureLoader = new THREE.TextureLoader();
         this.textureLoader.crossOrigin = '';
@@ -126,13 +130,13 @@ class tile_v1 extends ElementTypeInterface {
         this.setCanBeFlipped(data.canBeFlipped);
     }
 
-    getImageTexture(filename) {
+    getImageTexture(filename, back) {
         let textureLoader = new THREE.TextureLoader();
         textureLoader.crossOrigin = '';
 
         let texture = textureLoader.load(document.location.protocol + '//' + document.location.hostname + ':3699/' + this.visualization.gameKey + '/' + filename);
         texture.offset.set(0.5, 0.5);
-        texture.repeat.set(1 / this.radius, 1 / this.radius);
+        texture.repeat.set(1 / this.radius, 1 / this.radius * (back ? -1 : 1));
 
         return texture;
     }
@@ -463,7 +467,7 @@ class tile_v1 extends ElementTypeInterface {
     }
 
     getTargetObject() {
-        return this.object;
+        return this.targetGroup;
     }
 }
 
