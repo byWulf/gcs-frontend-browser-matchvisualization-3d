@@ -164,6 +164,9 @@ class Interaction {
     }
 
     register() {
+        this.canvas = this.visualization.sceneContainer.querySelector('canvas');
+        console.log("canvas", this.canvas, this.visualization.sceneContainer);
+
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.currentSelectedElement = null;
@@ -172,8 +175,8 @@ class Interaction {
             //Check if a clickable element was clicked. Send the MouseDown event and lock pointer
             let objectActionFound = false;
             if (event.button === 0) {
-                this.mouse.x = (event.offsetX / this.visualization.sceneContainer.offsetWidth) * 2 - 1;
-                this.mouse.y = - (event.offsetY / this.visualization.sceneContainer.offsetHeight) * 2 + 1;
+                this.mouse.x = (event.offsetX / this.canvas.offsetWidth) * 2 - 1;
+                this.mouse.y = - (event.offsetY / this.canvas.offsetHeight) * 2 + 1;
 
                 this.raycaster.setFromCamera(this.mouse, this.visualization.camera);
 
@@ -228,7 +231,7 @@ class Interaction {
 
                                 element.element.onStartMove(diff);
                                 this.currentSelectedElement = element;
-                                this.visualization.sceneContainer.requestPointerLock();
+                                this.canvas.requestPointerLock();
 
                                 objectActionFound = true;
                                 break;
@@ -242,13 +245,13 @@ class Interaction {
             if (!objectActionFound && (event.button === 0 || event.button === 2)) {
                 this.cameraMoving = true;
                 this.cameraMoved = false;
-                this.visualization.sceneContainer.requestPointerLock();
+                this.canvas.requestPointerLock();
             }
         };
 
         this.cameraMouseupListener = (event) => {
             if (event.button === 0 || event.button === 2) {
-                this.visualization.sceneContainer.ownerDocument.exitPointerLock();
+                this.canvas.ownerDocument.exitPointerLock();
             }
         };
 
@@ -279,7 +282,7 @@ class Interaction {
         };
 
         this.cameraPointerlockchangeListener = (event) => {
-            this.cameraButtonLocked = document.pointerLockElement === this.visualization.sceneContainer;
+            this.cameraButtonLocked = document.pointerLockElement === this.canvas;
 
             if (!this.cameraButtonLocked && this.currentSelectedElement) {
                 this.currentSelectedElement.element.onEndMove();
@@ -300,23 +303,23 @@ class Interaction {
 	        this.visualization.camera.position.z = Math.max(Math.min(this.visualization.camera.position.z + delta * -1, 100), 5);
         };
 
-        this.visualization.sceneContainer.addEventListener('mousewheel', this.cameraMousewheelListener, false);
-        this.visualization.sceneContainer.addEventListener('DOMMouseScroll', this.cameraMousewheelListener, false);
-        this.visualization.sceneContainer.addEventListener('mousedown', this.cameraMousedownListener, false);
-        this.visualization.sceneContainer.addEventListener('mouseup', this.cameraMouseupListener, false);
-        this.visualization.sceneContainer.addEventListener('mousemove', this.cameraMousemoveListener, false);
-        this.visualization.sceneContainer.ownerDocument.addEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
+        this.canvas.addEventListener('mousewheel', this.cameraMousewheelListener, false);
+        this.canvas.addEventListener('DOMMouseScroll', this.cameraMousewheelListener, false);
+        this.canvas.addEventListener('mousedown', this.cameraMousedownListener, false);
+        this.canvas.addEventListener('mouseup', this.cameraMouseupListener, false);
+        this.canvas.addEventListener('mousemove', this.cameraMousemoveListener, false);
+        this.canvas.ownerDocument.addEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
     }
 
     unregister() {
-        this.visualization.sceneContainer.ownerDocument.exitPointerLock();
+        this.canvas.ownerDocument.exitPointerLock();
 
-        this.visualization.sceneContainer.removeEventListener('mousewheel', this.cameraMousewheelListener, false);
-        this.visualization.sceneContainer.removeEventListener('DOMMouseScroll', this.cameraMousewheelListener, false);
-        this.visualization.sceneContainer.removeEventListener('mousedown', this.cameraMousedownListener, false);
-        this.visualization.sceneContainer.removeEventListener('mouseup', this.cameraMouseupListener, false);
-        this.visualization.sceneContainer.removeEventListener('mousemove', this.cameraMousemoveListener, false);
-        this.visualization.sceneContainer.ownerDocument.removeEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
+        this.canvas.removeEventListener('mousewheel', this.cameraMousewheelListener, false);
+        this.canvas.removeEventListener('DOMMouseScroll', this.cameraMousewheelListener, false);
+        this.canvas.removeEventListener('mousedown', this.cameraMousedownListener, false);
+        this.canvas.removeEventListener('mouseup', this.cameraMouseupListener, false);
+        this.canvas.removeEventListener('mousemove', this.cameraMousemoveListener, false);
+        this.canvas.ownerDocument.removeEventListener('pointerlockchange', this.cameraPointerlockchangeListener, false);
     }
 }
 

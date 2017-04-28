@@ -34,8 +34,10 @@ class Visualization {
         this.createWorld();
         this.createCamera();
         this.createRenderer();
+        this.createInteraction();
         this.createLighting();
         this.createTable();
+        this.createButtonContainer();
 
         this.createResizeListener();
         this.createAnimationFrameListener();
@@ -44,7 +46,7 @@ class Visualization {
     destroy() {
         this.removeAnimationFrameListener();
         this.removeResizeListener();
-        this.removeCamera();
+        this.removeInteraction();
         this.removeRenderer();
         this.removeAnimations();
     }
@@ -147,8 +149,6 @@ class Visualization {
         this.cameraRotationContainer.add(this.camera);
         this.cameraPositionContainer.add(this.cameraRotationContainer);
         this.scene.add(this.cameraPositionContainer);
-
-        this.interaction.register();
     }
 
     createRenderer() {
@@ -218,6 +218,13 @@ class Visualization {
         this.scene.add(element.element.object);
     }
 
+    createButtonContainer() {
+        this.buttonContainer = document.createElement('div');
+        this.buttonContainer.setAttribute('id', 'visualization3dButtonContainer');
+        this.buttonContainer.setAttribute('style', 'position: absolute; bottom: 0; width: 100%; text-align: center; padding-bottom: 10px;');
+        this.sceneContainer.appendChild(this.buttonContainer);
+    }
+
     createResizeListener() {
         this.resizeListener = () => {
             this.camera.aspect = this.sceneContainer.offsetWidth / this.sceneContainer.offsetHeight;
@@ -262,7 +269,11 @@ class Visualization {
         this.window.removeEventListener('resize', this.resizeListener, false);
     }
 
-    removeCamera() {
+    createInteraction() {
+        this.interaction.register();
+    }
+
+    removeInteraction() {
         this.interaction.unregister();
     }
 
@@ -448,6 +459,7 @@ class Visualization {
             let directParentObject = this.elements[index].element.getObject().parent;
 
             this.scene.remove(this.elements[index].element.getObject());
+            this.elements[index].element.onAfterRemove();
             this.elements.splice(index, 1);
 
             if (parentElement) {

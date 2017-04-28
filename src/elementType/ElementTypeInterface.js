@@ -41,6 +41,8 @@ class ElementTypeInterface {
 
     onEndMove() {}
 
+    onAfterRemove() {}
+
     getDimensions() {
         return new THREE.Box3();
     }
