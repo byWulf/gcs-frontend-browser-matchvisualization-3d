@@ -171,7 +171,7 @@ class Visualization {
         this.outlinePass.edgeStrength = 5;
         this.outlinePass.edgeThickness = 1;
         this.outlinePass.edgeGlow = 0;
-        this.outlinePass.pulsePeriod = 2;
+        this.outlinePass.pulsePeriod = 0;
         this.outlinePass.visibleEdgeColor.r = 255;
         this.outlinePass.visibleEdgeColor.g = 255;
         this.outlinePass.visibleEdgeColor.b = 255;
