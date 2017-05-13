@@ -1,5 +1,6 @@
 const ElementTypeInterface = require('./ElementTypeInterface');
 const THREE = require('three');
+const TWEEN = require('tween.js');
 const tileHelper = require('../helper/TileHelper');
 
 class tile_v1 extends ElementTypeInterface {

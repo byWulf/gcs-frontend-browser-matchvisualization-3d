@@ -1,4 +1,5 @@
 const ElementTypeInterface = require('./ElementTypeInterface');
+const THREE = require('three');
 
 class button_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {

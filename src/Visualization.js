@@ -7,7 +7,6 @@ require('../lib/three/examples/js/postprocessing/OutlinePass');
 require('../lib/three/examples/js/shaders/FXAAShader');
 
 const CANNON = require('cannon');
-
 const TWEEN = require('tween.js');
 
 const Element = require('./Element');

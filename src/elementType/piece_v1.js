@@ -1,6 +1,7 @@
 const ElementTypeInterface = require('./ElementTypeInterface');
 
 const THREE = require('three');
+const TWEEN = require('tween.js');
 require('../../lib/three/examples/js/loaders/OBJLoader');
 
 class piece_v1 extends ElementTypeInterface {
