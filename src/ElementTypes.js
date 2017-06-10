@@ -7,6 +7,8 @@ const tile_v1 = require('./elementType/tile_v1');
 const tileContainer_v1 = require('./elementType/tileContainer_v1');
 const autoResizeContainer_v1 = require('./elementType/autoResizeContainer_v1');
 const tableContainer = require('./elementType/tableContainer');
+const cardContainer_v1 = require('./elementType/cardContainer_v1');
+const card_v1 = require('./elementType/card_v1');
 
 module.exports = {
     board_v1: board_v1,
@@ -18,4 +20,6 @@ module.exports = {
     tileContainer_v1: tileContainer_v1,
     autoResizeContainer_v1: autoResizeContainer_v1,
     tableContainer: tableContainer,
+    cardContainer_v1: cardContainer_v1,
+    card_v1: card_v1
 };
