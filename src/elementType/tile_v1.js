@@ -470,6 +470,13 @@ class tile_v1 extends ElementTypeInterface {
     getTargetObject() {
         return this.targetGroup;
     }
+
+    getDimensions() {
+        return new THREE.Box3(
+            new THREE.Vector3(-this.radius/2, 0, -this.radius/2),
+            new THREE.Vector3(this.radius/2, this.height, this.radius/2)
+        );
+    }
 }
 
 module.exports = tile_v1;

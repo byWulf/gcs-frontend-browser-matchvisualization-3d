@@ -13,7 +13,6 @@ class button_v1 extends ElementTypeInterface {
         this.button.setAttribute('class', 'btn btn-default btn-sm pointer-auto');
         this.button.setAttribute('style', 'display: none;');
         this.button.addEventListener('click', () => {
-            console.log("button click");
             this.visualization.gameCommunicationCallback('button.click', this.element.getId(), {});
         });
         this.button.addEventListener('mousedown mousemove mouseup', (event) => {

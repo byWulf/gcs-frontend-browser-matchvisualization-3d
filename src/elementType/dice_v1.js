@@ -13,9 +13,11 @@ class dice_v1 extends ElementTypeInterface {
             DICE.DiceManager.setWorld(visualization.world);
         }
 
-        this.dice = new DICE.DiceD6({size: 1.5});
+        this.width = 1.5;
+
+        this.dice = new DICE.DiceD6({size: this.width});
         this.dice.getObject().body.material = visualization.elementBodyMaterial;
-        this.dice.getObject().position.y = 0.75;
+        this.dice.getObject().position.y = this.width / 2;
         this.dice.updateBodyFromMesh();
 
         this.object.add(this.dice.getObject());
@@ -66,6 +68,13 @@ class dice_v1 extends ElementTypeInterface {
 
     onClick() {
         this.visualization.gameCommunicationCallback('dice.roll', this.element.getId(), {intensity: 1});
+    }
+
+    getDimensions() {
+        return new THREE.Box3(
+            new THREE.Vector3(-this.width/2, -this.width/2, -this.width/2),
+            new THREE.Vector3( this.width/2,  this.width/2,  this.width/2)
+        );
     }
 }
 

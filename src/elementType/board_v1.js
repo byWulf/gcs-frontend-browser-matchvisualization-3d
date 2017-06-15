@@ -13,9 +13,8 @@ class board_v1 extends ElementTypeInterface {
         this.object.name = 'board_v1';
 
         let geometry = new THREE.BoxGeometry(this.width, 0.2, this.height);
-        THREE.ImageUtils.crossOrigin = 'anonymous';
-        let material = new THREE.MeshPhongMaterial({shininess: 0, map: THREE.ImageUtils.loadTexture(document.location.protocol + '//' + document.location.hostname + ':3699/' + visualization.gameKey + '/' + this.image)});
-        let mesh = new THREE.Mesh(geometry, material);
+        this.material = new THREE.MeshPhongMaterial({shininess: 0, map: this.getImageTexture(this.image)});
+        let mesh = new THREE.Mesh(geometry, this.material);
         mesh.position.y = 0.1;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -25,6 +24,11 @@ class board_v1 extends ElementTypeInterface {
         this.targetElement.name = 'board_v1_target';
         this.targetElement.position.y = 0.2;
         this.object.add(this.targetElement);
+    }
+
+    getImageTexture(image) {
+        THREE.ImageUtils.crossOrigin = 'anonymous';
+        return THREE.ImageUtils.loadTexture(document.location.protocol + '//' + document.location.hostname + ':3699/' + this.visualization.gameKey + '/' + image);
     }
 
     getTargetObject() {

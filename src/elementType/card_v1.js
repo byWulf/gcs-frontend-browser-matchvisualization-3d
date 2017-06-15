@@ -445,6 +445,13 @@ class card_v1 extends ElementTypeInterface {
     getTargetObject() {
         return this.targetGroup;
     }
+
+    getDimensions() {
+        return new THREE.Box3(
+            new THREE.Vector3(-this.width/2, 0, -this.height/2),
+            new THREE.Vector3(this.width/2, this.depth, this.height/2)
+        );
+    }
 }
 
 module.exports = card_v1;
