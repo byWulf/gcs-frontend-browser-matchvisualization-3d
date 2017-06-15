@@ -153,7 +153,9 @@ class tableContainer extends ElementTypeInterface {
             this.adjustIndicators(this.playerContainerIndicators[i], box);
         }
 
-        centerRadius = Math.max(centerRadius, maxPlayerWidth / (2 * Math.tan(Math.PI / this.getFilledSlots()))) + 5 /* spacing */;
+        if (this.getFilledSlots() > 0) {
+            centerRadius = Math.max(centerRadius, maxPlayerWidth / (2 * Math.tan(Math.PI / this.getFilledSlots()))) + 5 /* spacing */;
+        }
 
         this.tableRadius = Math.max(this.tableRadius, centerRadius + maxPlayerHeight + 5);
 
