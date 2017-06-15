@@ -19,7 +19,7 @@ class Visualization {
         this.window = window;
         this.sceneContainer = sceneContainer;
         this.gameKey = gameKey;
-        this.gameCommunicationCallback = gameCommunicationCallback;
+        this.gameCommunicationCallback = gameCommunicationCallback || function(){};
         this.interaction = new Interaction(this);
 
         this.user = null;
@@ -27,7 +27,7 @@ class Visualization {
         this.elements = [];
         this.currentSelectedElement = null;
 
-        this.handleSlotEvent(slots, ownUser);
+        this.handleSlotEvent(slots || [], ownUser);
 
         this.createScene();
         this.createWorld();
@@ -337,7 +337,7 @@ class Visualization {
         return vector;
     }
 
-    moveElementToParent(elementObject, newParentObject) {
+    moveElementToParent(elementObject, newParentObject, instant) {
         if (elementObject.userData.tween) elementObject.userData.tween.stop();
 
         let oldVector = this.sumParentPositions(elementObject);
@@ -356,10 +356,17 @@ class Visualization {
         let oldParentElements = this.getAllParentElementsByObject(elementObject);
 
         newParentObject.add(elementObject);
-        elementObject.position.x = diff.x;
-        elementObject.position.y = diff.y;
-        elementObject.position.z = diff.z;
-        elementObject.userData.tween.start();
+
+        if (instant) {
+            elementObject.position.x = 0;
+            elementObject.position.y = 0;
+            elementObject.position.z = 0;
+        } else {
+            elementObject.position.x = diff.x;
+            elementObject.position.y = diff.y;
+            elementObject.position.z = diff.z;
+            elementObject.userData.tween.start();
+        }
 
         let newParentElements = this.getAllParentElementsByObject(elementObject);
 
@@ -428,7 +435,7 @@ class Visualization {
 
         this.packageContainer.add(element.element.getObject());
 
-        if (element.parent.id) this.moveElementToParent(element.element.getObject(), this.findParentObject(element.parent));
+        if (element.parent.id) this.moveElementToParent(element.element.getObject(), this.findParentObject(element.parent), true);
 
         element.element.applyInitialData(elementData);
 
@@ -451,13 +458,20 @@ class Visualization {
         return element;
     }
 
+    removeObject(object) {
+        for (let i = 0; i < object.children.length; i++) {
+            this.removeObject(object.children[i]);
+        }
+        object.parent.remove(object);
+    }
+
     removeElement(elementId) {
         let index = this.elements.findIndex(element => element.id === elementId);
         if (index > -1) {
             let parentElement = this.elements.find(parentElement => parentElement.id === this.elements[index].parent.id);
             let directParentObject = this.elements[index].element.getObject().parent;
 
-            this.scene.remove(this.elements[index].element.getObject());
+            this.removeObject(this.elements[index].element.getObject());
             this.elements[index].element.onAfterRemove();
             this.elements.splice(index, 1);
 
