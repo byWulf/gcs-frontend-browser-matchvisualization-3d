@@ -44,7 +44,10 @@ class ElementTypeInterface {
     onAfterRemove() {}
 
     getDimensions() {
-        return new THREE.Box3();
+        return new THREE.Box3(
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0, 0)
+        );
     }
 
     onDimensionsChanged() {}
