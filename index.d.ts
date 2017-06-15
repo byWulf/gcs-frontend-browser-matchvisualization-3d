@@ -4,6 +4,7 @@ declare namespace GcsFrontendBrowserVisualization {
         destroy(): void;
         handleGameEvent(event: string, data: any): void;
         handleSlotEvent(slots: any, ownUser: any): void;
+        elements: any;
     }
 }
 
