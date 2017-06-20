@@ -1,5 +1,6 @@
 const ElementTypeInterface = require('./ElementTypeInterface');
 const THREE = require('three');
+const FileHelper = require('../helper/FileHelper');
 
 class board_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
@@ -13,7 +14,7 @@ class board_v1 extends ElementTypeInterface {
         this.object.name = 'board_v1';
 
         let geometry = new THREE.BoxGeometry(this.width, 0.2, this.height);
-        this.material = new THREE.MeshPhongMaterial({shininess: 0, map: this.getImageTexture(this.image)});
+        this.material = new THREE.MeshPhongMaterial({shininess: 0, map: FileHelper.getTexture(this.image, this.visualization.gameKey)});
         let mesh = new THREE.Mesh(geometry, this.material);
         mesh.position.y = 0.1;
         mesh.castShadow = true;
@@ -24,11 +25,6 @@ class board_v1 extends ElementTypeInterface {
         this.targetElement.name = 'board_v1_target';
         this.targetElement.position.y = 0.2;
         this.object.add(this.targetElement);
-    }
-
-    getImageTexture(image) {
-        THREE.ImageUtils.crossOrigin = 'anonymous';
-        return THREE.ImageUtils.loadTexture(document.location.protocol + '//' + document.location.hostname + ':3699/' + this.visualization.gameKey + '/' + image);
     }
 
     getTargetObject() {

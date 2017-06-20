@@ -2,6 +2,7 @@ const ElementTypeInterface = require('./ElementTypeInterface');
 const THREE = require('three');
 const TWEEN = require('tween.js');
 const cardHelper = require('../helper/CardHelper');
+const FileHelper = require('../helper/FileHelper');
 
 class card_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
@@ -130,12 +131,10 @@ class card_v1 extends ElementTypeInterface {
     }
 
     getImageTexture(filename, back) {
-        let textureLoader = new THREE.TextureLoader();
-        textureLoader.crossOrigin = '';
+        let texture = FileHelper.getTexture(filename, this.visualization.gameKey);
 
-        let texture = textureLoader.load(document.location.protocol + '//' + document.location.hostname + ':3699/' + this.visualization.gameKey + '/' + filename);
         texture.offset.set(0.5, 0.5);
-        texture.repeat.set(1 / this.radius, 1 / this.radius * (back ? -1 : 1));
+        texture.repeat.set(1 / this.width, 1 / this.height * (back ? -1 : 1));
 
         return texture;
     }

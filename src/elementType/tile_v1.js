@@ -2,6 +2,7 @@ const ElementTypeInterface = require('./ElementTypeInterface');
 const THREE = require('three');
 const TWEEN = require('tween.js');
 const tileHelper = require('../helper/TileHelper');
+const FileHelper = require('../helper/FileHelper');
 
 class tile_v1 extends ElementTypeInterface {
     constructor(data, visualization, element) {
@@ -132,10 +133,7 @@ class tile_v1 extends ElementTypeInterface {
     }
 
     getImageTexture(filename, back) {
-        let textureLoader = new THREE.TextureLoader();
-        textureLoader.crossOrigin = '';
-
-        let texture = textureLoader.load(document.location.protocol + '//' + document.location.hostname + ':3699/' + this.visualization.gameKey + '/' + filename);
+        let texture = FileHelper.getTexture(filename, this.visualization.gameKey);
         texture.offset.set(0.5, 0.5);
         texture.repeat.set(1 / this.radius, 1 / this.radius * (back ? -1 : 1));
 
